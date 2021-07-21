@@ -11,12 +11,13 @@ data(ames, package = "modeldata")
 ```
 
 
-Models are mathematical tools that can describe a system and capture relationships in the data given to them. Models can be used for various purposes, including predicting future events, determining if there is a difference between several groups, aiding map-based visualization, discovering novel patterns in the data that could be further investigated, and more. The utility of a model hinges on its ability to be _reductive_. The primary influences in the data can be captured mathematically in a useful way, such as in a relationship that can be expressed as an equation. 
+모델은 시스템을 설명하고 제공된 데이터의 관계를 캡처할 수 있는 수학적 도구입니다. 모델은 미래 이벤트 예측, 여러 그룹 간의 차이 여부 결정, 지도 기반 시각화 지원, 추가 조사가 가능한 데이터의 새로운 패턴 발견 등 다양한 목적으로 사용할 수 있습니다. 모델의 유용성은 _환원_ 능력에 달려 있습니다. 데이터의 주요 영향은 방정식으로 표현할 수 있는 관계와 같은 유용한 방식으로 수학적으로 캡처할 수 있습니다.
 
-Since the beginning of the twenty-first century, mathematical models have become ubiquitous in our daily lives, in both obvious and subtle ways. A typical day for many people might involve checking the weather to see when might be a good time to walk the dog, ordering a product from a website, typing a text message to a friend and having it autocorrected, and checking email. In each of these instances, there is a good chance that some type of model was involved. In some cases, the contribution of the model might be easily perceived ("You might also be interested in purchasing product _X_") while in other cases, the impact could be the absence of something (e.g., spam email). Models are used to choose clothing that a customer might like, to identify a molecule that should be evaluated as a drug candidate, and might even be the mechanism that a nefarious company uses to avoid the discovery of cars that over-pollute.  For better or worse, models are here to stay.
+21세기 초부터 수학적 모델은 명백하고 미묘한 방식으로 일상 생활에서 어디에나 존재하게 되었습니다. 많은 사람들의 일반적인 하루는 애완견을 산책시키기에 좋은 시간을 선택하기 위해 하루의 날씨를 확인하고, 웹사이트에서 제품을 주문하고, 친구에게 문자 메시지를 입력하고 자동 수정하고, 이메일을 확인하는 일이 포함될 수 있습니다. 이러한 각각의 경우에 어떤 유형의 수학적 모델이 관련되었을 가능성이 높습니다. 어떤 경우에는 이러한 모델이 사용됨을 쉽게 인식할 수도 있지만(예, '제품 _X_ 구매'), 그렇지 않은 경우도 있습니다(예: 스팸 이메일). 모델은 고객이 좋아할 만한 의복을 선택하고, 약물 후보로 평가되어질 분자를 식별하는 데 사용되며, 심지어 사악한 회사가 과도하게 오염시키는 자동차의 발견을 피하기 위해 사용하는 메커니즘일 수도 있습니다. 좋든 나쁘든 모델은 계속 존재합니다.
+
 
 :::rmdnote
-There are two reasons that models permeate our lives today: an abundance of **software** exists to create models and it has become easier to record **data** and make it accessible. 
+오늘날 모델이 우리 삶에 스며든 두 가지 이유가 있습니다. 모델을 생성하기 위한 풍부한 **소프트웨어**가 존재하고 **데이터**를 기록하고 접근하는 것이 쉬워졌기 때문입니다. 
 :::
 
 This book focuses largely on software. It is obviously critical that software produces the correct relationships to represent the data. For the most part, determining mathematical correctness is possible, but the reliable creation of appropriate models requires more. 
