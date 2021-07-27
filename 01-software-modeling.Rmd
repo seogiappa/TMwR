@@ -1,4 +1,4 @@
-# Software for modeling {#software-modeling}
+# 모델링용 소프트웨어 {#software-modeling}
 
 ```{r software-setup, include = FALSE}
 knitr::opts_chunk$set(fig.path = "figures/")
@@ -21,15 +21,15 @@ data(ames, package = "modeldata")
 
 이 책은 주로 소프트웨어에 중점을 둡니다. 소프트웨어가 데이터를 표현하기 위해 정확한 관계를 생성하는 것은 매우 중요합니다. 대부분의 경우 수학적 정확성을 결정하는 것이 가능하지만 적절한 모델을 안정적으로 생성하려면 다음과 같은 것들이 더 필요합니다. 
 
-First, it is important that it is easy to operate software in a proper way. The user interface should not be so poorly designed that the user would not know that they used it inappropriately. For example, @baggerly2009 report myriad problems in the data analyses from a high profile computational biology publication. One of the issues was related to how the users were required to add the names of the model inputs. The user interface of the software made it easy to offset the column names of the data from the actual data columns. This resulted in the wrong genes being identified as important for treating cancer patients and eventually contributed to the termination of several clinical trials [@Carlson2012]. 
+첫째, 소프트웨어를 적절한 방식으로 쉽게 운용하는 것이 중요합니다. 사용자가 부적절하게 사용했다는 사실을 모를 정도로 사용자 인터페이스가 잘못 설계되어서는 안 됩니다. 예를 들어, Baggerly와 @baggerly2009는 세간의 이목을 끄는 컴퓨터 생물학 출판물의 데이터 분석에서 무수히 많은 문제를 보고했습니다. 문제 중 하나는 사용자가 모델 입력의 이름을 추가해야 하는 방법과 관련이 있었습니다. 소프트웨어의 사용자 인터페이스를 통해 실제 데이터 열에서 데이터의 열 이름을 쉽게 오프셋 할 수 있었습니다. 이로 인해 잘못된 유전자가 암 환자 치료에 중요한 것처럼 잘못 여겨졌고, 결국 여러 임상 시험이 종료되었습니다[@Carlson2012].
 
-If we need high quality models, software must facilitate proper usage. @abrams2003 describes an interesting principle to guide us: 
+고품질 모델이 필요한 경우 소프트웨어를 적절하게 사용할 수 있어야 합니다. @abrams2003는 다음과 같은 흥미로운 원칙을 설명합니다:
 
-> The Pit of Success: in stark contrast to a summit, a peak, or a journey across a desert to find victory through many trials and surprises, we want our customers to simply fall into winning practices by using our platform and frameworks. 
+> 성공의 중심: 정상에 오르기 위해서는 수많은 시행착오가 필요하지만, 우리가 고객에게 바라는 것은 우리의 플랫폼과 프레임워크를 사용하여 쉽게 원하는 목표를 달성하는 것입니다. 
 
-Data analysis and modeling software should espouse this idea. 
+데이터 분석 및 모델링 소프트웨어는 이 아이디어를 따라야 합니다. 
 
-The second important aspect of model building is related to scientific methodology. When working with complex predictive models, it can be easy to unknowingly commit errors related to logical fallacies or inappropriate assumptions. Many machine learning models are so adept at discovering patterns that they can effortlessly find empirical patterns in the data that fail to reproduce later. Some of these types of methodological errors are insidious in that the issue can go undetected until a later time when new data that contain the true result are obtained. 
+모델 구축의 두 번째 중요한 측면은 과학적 방법론과 관련이 있습니다. 복잡한 예측 모델로 작업할 때 논리적 오류 또는 부적절한 가정과 관련된 오류를 무의식적으로 범하기 쉽습니다. 많은 기계 학습 모델은 패턴 발견에 매우 능숙하여 나중에 재현되지 않는 데이터로부터 경험적 패턴을 쉽게 찾을 수 있습니다. 그러나, 이러한 유형의 방법론적 오류 중 일부는 실제 결과가 포함된 새 데이터를 얻을 때까지 문제가 감지되지 않을 수 있다는 점에서 조심해야 합니다.
 
 :::rmdwarning
 As our models have become more powerful and complex, it has also become easier to commit latent errors. 
