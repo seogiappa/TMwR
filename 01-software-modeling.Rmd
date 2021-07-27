@@ -1,4 +1,4 @@
-# 모델링용 소프트웨어 {#software-modeling}
+# 모델링을 위한 소프트웨어 {#software-modeling}
 
 ```{r software-setup, include = FALSE}
 knitr::opts_chunk$set(fig.path = "figures/")
@@ -32,11 +32,12 @@ data(ames, package = "modeldata")
 모델 구축의 두 번째 중요한 측면은 과학적 방법론과 관련이 있습니다. 복잡한 예측 모델로 작업할 때 논리적 오류 또는 부적절한 가정과 관련된 오류를 무의식적으로 범하기 쉽습니다. 많은 기계 학습 모델은 패턴 발견에 매우 능숙하여 나중에 재현되지 않는 데이터로부터 경험적 패턴을 쉽게 찾을 수 있습니다. 그러나, 이러한 유형의 방법론적 오류 중 일부는 실제 결과가 포함된 새 데이터를 얻을 때까지 문제가 감지되지 않을 수 있다는 점에서 조심해야 합니다.
 
 :::rmdwarning
-As our models have become more powerful and complex, it has also become easier to commit latent errors. 
+모델이 더욱 강력하고 복잡해짐에 따라 잠재적인 오류를 범하기도 더 쉬워집니다. 
 :::
 
-This same principle also applies to programming. Whenever possible, the software should be able to protect users from committing mistakes. Software should make it easy for users to **do the right thing**. 
+이 동일한 원칙은 프로그래밍에도 적용됩니다. 가능한 한 소프트웨어는 사용자가 **실수하지 않도록 보호**할 수 있어야 하고, **올바른 작업을 쉽게 수행**할 수 있도록 해야 합니다.
 
+모델을 개발할 때는 이 두 가지 측면이 중요합니다. 모델을 만들기 위한 도구는 쉽게 구할 수 있고 모델은 큰 영향을 미칠 수 있기 때문에 더 많은 사람들이 모델을 만들고 있습니다. 기술 전문성 및 교육 측면에서 배경은 다양합니다. 도구가 사용자의 경험에 견고해야 한다는 것이 중요합니다. 도구는 고성능 모델을 생성할 수 있을 만큼 강력해야 하지만 적절한 방식으로 사용하기 쉬워야 합니다. 이 책은 이러한 특성을 염두에 두고 설계된 모델링용 소프트웨어 제품군에 대해 설명합니다.
 These two aspects of model development are crucial. Since tools for creating models are easily obtained and models can have such a profound impact, many more people are creating them. In terms of technical expertise and training, their backgrounds will vary. It is important that their tools be _robust_ to the experience of the user. Tools should be powerful enough to create high-performance models, but, on the other hand, should be easy to use in an appropriate way.  This book describes a suite of software for modeling which has been designed with these characteristics in mind.
 
 The software is based on the R programming language [@baseR]. R has been designed especially for data analysis and modeling. It is an implementation of the S language (with lexical scoping rules adapted from Scheme and Lisp) which was created in the 1970s to
