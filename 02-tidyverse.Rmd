@@ -110,11 +110,11 @@ ggplot(mtcars, aes(x = wt, y = mpg)) +
   geom_smooth(method = lm)
 ```
 
-While similar to the `r pkg(dplyr)` pipeline, note that the first argument to this pipeline is a data set (`mtcars`) and that each function call returns a `ggplot` object. Not all pipelines need to keep the returned values (plot objects) the same as the initial value (a data frame). Using the pipe operator with `r pkg(dplyr)` operations has acclimated many R users to expect to return a data frame when pipelines are used; as shown with `r pkg(ggplot2)`, this does not need to be the case. Pipelines are incredibly useful in modeling workflows but modeling pipelines can return, instead of a data frame, objects such as model components.
+`r pkg(dplyr)`의 파이프라인과 유사하지만 ggplot 파이프라인의 첫 번째 인수는 데이터 세트(`mtcars`)이며 각 함수 호출은 `ggplot` 객체를 반환합니다. 반환된 값(플롯 객체)을 초기 값(데이터 프레임)과 동일하게 유지할 필요는 없습니다. 파이프 연산자를 `r pkg(dplyr)' 작업과 함께 사용하면 많은 R 사용자는 파이프라인이 사용될 때 데이터 프레임을 반환할 것으로 예상합니다. 그렇지만, `r pkg(ggplot2)`에서 볼 수 있듯이 그럴 필요는 없습니다. 파이프라인은 워크플로 모델링에 매우 유용하지만 파이프라인 모델링은 데이터 프레임 대신에 모델 구성 요소와 같은 객체를 반환할 수 있습니다.(파이프라인은 모델을 생성하는 데 필요한 워크플로를 체계화하고 자동화하는 방법을 말함-번역자)
 
-R has excellent tools for creating, changing, and operating on functions, making it a great language for _functional programming_. This approach can replace iterative loops in many situations, such as when a function returns a value without other side effects ^[Examples of function side effects could include changing global data or printing a value.]. 
+R은 함수를 만들고, 변경하고, 작동시키는 훌륭한 도구를 가지고 있는, _함수형 프로그래밍_ 을 위한 훌륭한 언어입니다. 이 접근 방식은 함수가 다른 부작용 없이 값을 반환하는 경우와 같이 많은 상황에서 반복 루프를 대체할 수 있습니다^[함수 부작용의 예에는 전역 데이터 변경 또는 값 인쇄가 포함될 수 있습니다.].
 
-Let's look at an example. Suppose you are interested in the logarithm of the ratio of the fuel efficiency to the car weight. To those new to R and/or coming from other programming languages, a loop might seem like a good option:
+예를 들어 보겠습니다. 자동차 중량에 대한 연비 비율의 로그에 관심이 있다고 가정합시다. R을 처음 접하거나 다른 프로그래밍 언어를 많이 사용해 본 사람들에게는 루프가 좋은 옵션처럼 보일 수 있습니다.:
 
 ```{r tidyverse-loop}
 n <- nrow(mtcars)
@@ -125,13 +125,13 @@ for (car in 1:n) {
 head(ratios)
 ```
 
-Those with more experience in R may know that there is a much simpler and faster _vectorized version_ that can be computed by:
+R에 대한 경험이 많은 사람들은 다음과 같이 훨씬 간단하고 빠르게 계산할 수 있는 _벡터화된 버전_ 이 있다는 것을 알 수 있습니다.:
 
 ```{r tidyverse-vectorized}
 ratios <- log(mtcars$mpg/mtcars$wt)
 ```
 
-However, in many real-world cases, the element-wise operation of interest is too complex for a vectorized solution. In such a case, a good approach is to write a _function_ to do the computations. When we design for functional programming, it is important that the output only depends on the inputs and that the function has no side effects. Violations of these ideas in the following function are shown with comments:
+그러나 많은 실제 사례에서 관심 요소별 연산은 벡터화된 솔루션에 대해 너무 복잡합니다. 이러한 경우에 좋은 접근 방식은 _함수_ 를 작성하여 계산을 수행하는 것입니다. 함수형 프로그래밍을 위해 설계할 때 중요한 것은 출력이 입력에만 의존하고 부작용이 없어야 합니다. 다음 함수에서 이 규칙 위반은 주석과 함께 표시됩니다.:
 
 ```{r tidyverse-non-functional}
 compute_log_ratio <- function(mpg, wt) {
@@ -143,7 +143,7 @@ compute_log_ratio <- function(mpg, wt) {
 }
 ```
 
-A better version would be:
+더 나은 버전은 다음과 같습니다.:
 
 ```{r tidyverse-better-function}
 compute_log_ratio <- function(mpg, wt, log_base = exp(1)) {
@@ -151,56 +151,57 @@ compute_log_ratio <- function(mpg, wt, log_base = exp(1)) {
 }
 ```
 
-The `r pkg(purrr)` package contains tools for functional programming. Let's focus on the `map()` family of functions, which operates on vectors and always returns the same type of output. The most basic function, `map()`, always returns a list and uses the basic syntax of `map(vector, function)`. For example, to take the square-root of our data, we could: 
+`r pkg(purrr)` 패키지에는 함수형 프로그래밍을 위한 도구가 포함되어 있습니다. 벡터에서 작동하고 항상 동일한 유형의 출력을 반환하는 `map()` 함수 제품군에 초점을 맞춰 보겠습니다. 가장 기본적인 함수인 `map()`은 항상 목록을 반환하고 `map(vector, function)`의 기본 구문을 사용합니다. 예를 들어 데이터의 제곱근을 취하려면 다음을 수행할 수 있습니다.:
 
 ```{r map-basic}
 map(head(mtcars$mpg, 3), sqrt)
 ``` 
 
-There are specialized variants of `map()` that return values when we know or expect that the function will generate one of the basic vector types. For example, since the square-root returns a double-precision number: 
+함수가 기본 벡터 유형 중 하나를 생성한다는 것을 알고 있거나 예상할 수 있을 때, 그 값을 반환시킬 수 있는 `map()` 함수의 특수 변형이 있습니다. 예를 들어, 제곱근은 배정밀도 숫자를 반환한다는 것을 예상할 수 있으므로 다음과 같이 double형 `map()` 함수를 쓸 수 있습니다.:
 
 ```{r map-dbl}
 map_dbl(head(mtcars$mpg, 3), sqrt)
 ``` 
 
-There are also mapping functions that operate across multiple vectors: 
+또한 여러 벡터에 걸쳐 작동하는 매핑 함수도 있습니다.: 
 
 ```{r map2}
 ratios <- map2_dbl(mtcars$mpg, mtcars$wt, compute_log_ratio)
 head(ratios)
 ```
 
-The `map()` functions also allow for temporary, anonymous functions defined using the tilde character. The argument values are `.x` and `.y` for `map2()`:
+`map()` 함수는 물결표(~) 문자를 사용하여 정의된 임시 익명 함수도 허용합니다. `map2()` 함수의 경우 인수 값은  `.x` 및 `.y`입니다.
 
 ```{r map2-inline}
 map2_dbl(mtcars$mpg, mtcars$wt, ~ log(.x/.y)) %>% 
   head()
 ```
 
-These examples have been trivial but, in later sections, are applied to more complex problems. 
+이러한 예는 사소한 것들이지만 이후 섹션에서는 보다 복잡한 문제에 적용됩니다.
 
 :::rmdnote
-For functional programming in tidy modeling, functions should be defined so that functions like `map()` can be used for iterative computations.
+tidymodeling에서 함수형 프로그래밍을 위해서는 `map()`과 같은 함수가 반복 계산에 사용될 수 있도록 함수를 정의해야 합니다.
 :::
 
 
-## Examples of tidyverse syntax
+## tidyverse 구문 예
 
+예제를 살펴보기 전에 tidyverse가 "tibble"이라는 데이터 프레임 유형에 어떻게 의존하는지 논의해 보겠습니다. Tibble은 R의 기본 데이터 프레임과 약간 다른 규칙을 가지고 있습니다. 예를 들어, tibble은 구문적으로 유효한 변수 이름이 아닌 열 이름과 자연스럽게 작동합니다.
 Before diving into examples, let's discuss how the tidyverse relies on a type of data frame called a "tibble". Tibbles have slightly different rules than basic data frames in R. For example, tibbles naturally work with column names that are not syntactically valid variable names:
 
 ```{r tidyverse-names}
-# Wants valid names:
+# 유효한 이름을 원함:
 data.frame(`variable 1` = 1:2, two = 3:4)
-# But can be coerced to use them with an extra option:
+# 그러나 추가 옵션을 사용하여 다음과 같이 강제로 사용할 수 있습니다.:
 df <- data.frame(`variable 1` = 1:2, two = 3:4, check.names = FALSE)
 df
 
-# But tibbles just work:
+# 그러나 tibbles는 조건없이 작동합니다.:
 tbbl <- tibble(`variable 1` = 1:2, two = 3:4)
 tbbl
 ```
 
-Standard data frames enable _partial matching_ of arguments so that code using only a portion of the column names still work. Tibbles prevent this from happening since it can lead to accidental errors. 
+표준 데이터 프레임은 열 이름의 _부분적일치_ 를 가능하게 해서 열 이름의 부분만 사용하는 코드도 작동하게 합니다. 그러나,이것은 우발적인 오류로 이어질 수 있으므로 Tibbles는 이것을 허용하지 않습니다.
 
 ```{r tidyverse-partial, error = TRUE}
 df$tw
@@ -208,7 +209,7 @@ df$tw
 tbbl$tw
 ```
 
-Tibbles also prevent one of the most common R errors: dropping dimensions. If a standard data frame subsets the columns down to a single column, the object is converted to a vector. Tibbles _never_ do this:
+Tibble은 또한 가장 일반적인 R 오류 중 하나인 차원 삭제를 방지합니다. 표준 데이터 프레임이 열을 단일 열로 하위 집합으로 만드는 경우 이 객체가 벡터로 변환됩니다. Tibbles는 _절대_ 이렇게 되지 않습니다.:
 
 ```{r tidyverse-drop}
 df[, "two"]
@@ -216,7 +217,7 @@ df[, "two"]
 tbbl[, "two"]
 ```
 
-There are various other advantages to using tibbles instead of data frames, such as better printing and more.  [Chapter 10](https://r4ds.had.co.nz/tibbles.html) of @wickham2016 has more details on tibbles.
+데이터 프레임 대신 티블을 사용하면 더 나은 인쇄 등 다양한 이점이 있습니다. tibbles에 대한 자세한 내용은 @wickham2016의 [Chapter 10](https://r4ds.had.co.nz/tibbles.html)에 있습니다.
 
 ```{r tidyverse-import-raw, include = FALSE}
 url <- "chi.csv"
@@ -234,7 +235,7 @@ num_combos <-
   nrow()
 ```
 
-To demonstrate some syntax, let's use tidyverse functions to read in data that could be used in modeling. The data set comes from the city of Chicago's data portal and contains daily ridership data for the city's elevated train stations. The data set has columns for: 
+몇 가지 구문을 보여주기 위해서 모델링에 사용할 수 있는 데이터를 읽는 데 tidyverse 함수를 사용하겠습니다. 데이터 세트는 시카고 시의 데이터 포털에서 가져온 것이며 도시의 고가 기차역에 대한 일일 승객 데이터를 포함합니다. 데이터 세트에는 다음과 같은 열이 있습니다.:
 
 - the station identifier (numeric), 
 - the station name (character), 
@@ -242,17 +243,17 @@ To demonstrate some syntax, let's use tidyverse functions to read in data that c
 - the day of the week (character), and 
 - the number of riders (numeric).
 
-Our tidyverse pipeline will conduct the following tasks, in order: 
+tidyverse 파이프라인은 다음 작업을 순서대로 수행합니다.: 
 
-1. We will use the tidyverse package `r pkg(readr)` to read the data from the source website and convert them into a tibble. To do this, the `read_csv()` function can determine the type of data by reading an initial number of rows. Alternatively, if the column names and types are already known, a column specification can be created in R and passed to `read_csv()`. 
+1. 소스 웹사이트에서 데이터를 읽어서 tibble로 변환하기 위해 'r pkg(readr)' 패키지를 사용합니다. 이를 위해 `read_csv()` 함수는 초기 행 수를 읽어 데이터 유형을 결정할 수 있습니다. 또는 열 이름과 유형이 이미 알려진 경우 R에서 열의 사양을 작성하고 `read_csv()`로 전달할 수 있습니다.
 
-1. We filter the data to eliminate a few columns that are not needed (such as the station ID) and change the column `stationname` to `station`. The function `select()` is used for this. When filtering, use either the names of the column names or a `r pkg(dplyr)` selector function. When selecting names, a new variable name can be declared using the argument format `new_name = old_name`.
+2. 데이터를 필터링하여 필요하지 않은 몇 개의 열(예: 스테이션 ID)을 제거하고 `stationname` 열을 `station`으로 변경합니다. 이를 위해 `select()` 함수가 사용됩니다. 필터링할 때 열 이름의 이름을 사용하거나 `r pkg(dplyr)` 선택기 함수를 사용합니다. 이름을 선택할 때 `new_name = old_name` 인수 형식을 사용해서 새 변수 이름을 선언할 수도 있습니다.
 
-1. The date field is converted to the R date format using the `mdy()` function from the `r pkg(lubridate)` package. We also convert the ridership numbers to thousands. Both of these computations are executed using the `dplyr::mutate()` function.  
+3. 날짜 필드는 `r pkg(lubridate)` 패키지의 `mdy()` 함수를 사용하여 R 날짜 형식으로 변환됩니다. 우리는 또한 승객 수를 천 단위로 변환합니다. 이 두 계산은 모두 `dplyr::mutate()` 함수를 사용하여 실행됩니다.
 
-1. There are a small number of days that have replicate ridership numbers at certain stations. To mitigate this issue, we use the maximum number of rides for each station and day combination. We _group_ the ridership data by station and day, and then _summarize_ within each of the `r num_combos` unique combinations with the maximum statistic. 
+4. 특정 역에 중복된 승차자 번호가 있는 날짜가 몇 개 있습니다. 이 이슈를 완화하기 위해 우리는 각 역과 요일을 조합한 최대 승차 횟수를 사용합니다. 우리는 역과 요일별로 승객 데이터를 _그룹화_ 한 다음 최대 통계를 사용하여 각 `r num_combos` 고유 조합 내에서 _요약_ 합니다.
 
-The tidyverse code for these steps is:
+이 단계에 대한 tidyverse 코드는 다음과 같습니다.:
 
 ```{r tidyverse-import, message = FALSE}
 library(tidyverse)
@@ -261,20 +262,20 @@ library(lubridate)
 url <- "http://bit.ly/raw-train-data-csv"
 
 all_stations <- 
-  # Step 1: Read in the data.
+  # Step 1: 데이터 읽기.
   read_csv(url) %>% 
-  # Step 2: filter columns and rename stationname
+  # Step 2: 열 필터링 및 스테이션 이름 이름 바꾸기
   dplyr::select(station = stationname, date, rides) %>% 
-  # Step 3: Convert the character date field to a date encoding.
+  # Step 3: 문자 날짜 필드를 날짜 인코딩으로 변환.
   # Also, put the data in units of 1K rides
   mutate(date = mdy(date), rides = rides / 1000) %>% 
-  # Step 4: Summarize the multiple records using the maximum.
+  # Step 4: 최대값을 사용하여 여러 레코드 요약.
   group_by(date, station) %>% 
   summarize(rides = max(rides), .groups = "drop")
 ```
 
-This pipeline of operations illustrates why the tidyverse is popular. A series of data manipulations is used that have simple and easy to understand user interfaces; the series is bundled together in a streamlined and readable way. The focus is on how the user interacts with the software. This approach enables more people to learn R and achieve their analysis goals, and adopting these same principles for modeling in R has the same benefits. 
+이 작업 파이프라인은 tidyverse가 인기 있는 이유를 보여줍니다. 일련의 데이터 조작이 간단하고 이해하기 쉬운 사용자 인터페이스로 이루어져 있습니다.; 일련의 조작 도구가 간소화되고 읽기 쉬운 방식으로 함께 번들로 제공됩니다. 초점은 사용자가 소프트웨어와 상호 작용하는 방식에 있습니다. 이 접근 방식을 통해 더 많은 사람들이 R을 배우고 분석 목표를 달성할 수 있으며, R에서 모델링하기 위해 이와 동일한 원칙을 채택하면 동일한 이점이 있습니다.
 
-## Chapter summary 
+## 단원 요약 
 
-This chapter introduced the tidyverse, with a focus on applications for modeling. We described differences in conventions between the tidyverse and base R, and introduced two important components of the tidyverse system, tibbles and the pipe operator `%>%`. Data cleaning and processing can feel mundane at times, but these tasks are important for modeling in the real world; we illustrated how to use tibbles, the pipe, and tidyverse functions in an example data import and processing exercise.  
+이 장에서는 모델링을 위한 응용 프로그램에 중점을 둔 tidyverse를 소개했습니다. 우리는 tidyverse와 기본 R 사이의 규약의 차이점을 설명했고, tidyverse 시스템의 두 가지 중요한 구성요소인 tibbles와 파이프 연산자 `%>%`를 소개했습니다. 데이터 정리 및 처리는 때때로 일상적인 것처럼 느껴질 수 있지만 이러한 작업은 실제 세계에서 모델링하는 데 중요합니다.; 우리는 예제 데이터 가져오기 및 처리 연습에서 tibbles, pipe 및 tintyverse 함수를 사용하는 방법을 설명했습니다.
