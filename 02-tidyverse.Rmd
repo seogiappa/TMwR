@@ -68,7 +68,7 @@ class(boot_samp)
 
  * 동일한 값(예: 이진 데이터의 경우 0)이 많은 데이터는 _희소 행렬 형식(sparse matrix format)_ 으로 저장할 수 있습니다. 이 형식을 사용하면 데이터의 크기를 줄일 수 있을 뿐만 아니라 보다 효율적인 계산 기법을 사용할 수 있습니다.
 
-이러한 형식은 문제의 범위가 충분하고 잠재적인 데이터 처리 방법이 잘 정의되어 있고 이러한 형식에 모두 적합한 경우에 유용합니다^[Not all algorithms can take advantage of sparse representations of data. In such cases, a sparse matrix must be converted to a more conventional format before proceeding.]. 그러나 이러한 제약 조건을 위반하면, 특수 데이터 형식의 유용성이 떨어집니다. 예를 들어, 데이터를 분수로 변환하면 그 출력이 더 이상 희소하지 않습니다. 희소 행렬 표현은 모델링의 특정 알고리즘 단계에서 유용하지만, 특정 단계 이전이나 이후가 아닌 경우가 많습니다.
+이러한 형식은 문제의 범위가 충분하고 잠재적인 데이터 처리 방법이 잘 정의되어 있고 이러한 형식에 모두 적합한 경우에 유용합니다^[모든 알고리즘이 희소 데이터 표현을 활용할 수 있는 것은 아닙니다. 이러한 경우 계속 진행하기 전에 희소 행렬을 보다 일반적인 형식으로 변환해야 합니다.]. 그러나 이러한 제약 조건을 위반하면, 특수 데이터 형식의 유용성이 떨어집니다. 예를 들어, 데이터를 분수로 변환하면 그 출력이 더 이상 희소하지 않습니다. 희소 행렬 표현은 모델링의 특정 알고리즘 단계에서 유용하지만, 특정 단계 이전이나 이후가 아닌 경우가 많습니다.
 
 :::rmdwarning
 특수 데이터 구조는 일반적인 데이터 구조처럼 전체 모델링 워크플로우에 대해 유연하지 않습니다. 
@@ -187,7 +187,6 @@ tidymodeling에서 함수형 프로그래밍을 위해서는 `map()`과 같은 �
 ## tidyverse 구문 예
 
 예제를 살펴보기 전에 tidyverse가 "tibble"이라는 데이터 프레임 유형에 어떻게 의존하는지 논의해 보겠습니다. Tibble은 R의 기본 데이터 프레임과 약간 다른 규칙을 가지고 있습니다. 예를 들어, tibble은 구문적으로 유효한 변수 이름이 아닌 열 이름과 자연스럽게 작동합니다.
-Before diving into examples, let's discuss how the tidyverse relies on a type of data frame called a "tibble". Tibbles have slightly different rules than basic data frames in R. For example, tibbles naturally work with column names that are not syntactically valid variable names:
 
 ```{r tidyverse-names}
 # 유효한 이름을 원함:
