@@ -1,4 +1,4 @@
-# A review of R modeling fundamentals {#base-r}
+# R 모델링 기초 검토 {#base-r}
 
 ```{r base-r-setup, include = FALSE}
 knitr::opts_chunk$set(fig.path = "figures/")
@@ -6,13 +6,13 @@ data(crickets, package = "modeldata")
 library(tidyverse)
 ```
 
-This book is about creating models with R. Before describing how to apply tidy data principles, let's review how models are created, trained, and used in the core R language (often called "base R"). This chapter is a brief illustration of core language conventions. It is not exhaustive but provides readers (especially those new to R) the basic, most commonly used motifs. 
+이 책은 R을 사용하여 모델을 생성하는 방법에 관한 것입니다. 깔끔한 데이터 원칙을 적용하는 방법에 대해 설명하기 전에, core R 언어(종종 'base R'이라고 함)에서 모델이 생성되고, 훈련되고, 사용되는 방법을 검토해 보겠습니다. 이 장은 핵심 언어 규칙에 대한 간략한 설명입니다. 완전하지는 않지만 독자(특히 R을 처음 접하는 독자)에게 가장 일반적으로 사용되는 기본적인 모티브를 제공합니다.
 
-The S language, on which R is based, has had a rich data analysis environment since the publication of @WhiteBook (commonly known as The White Book). This version of S introduced standard infrastructure components familiar to R users today, such as symbolic model formulae, model matrices, and data frames, as well as standard object-oriented programming methods for data analysis. These user-interfaces have not substantively changed since then.  
+R이 기반이 되는 S 언어는 @WhiteBook(일반적으로 White Book으로 알려짐) 발행 이후 풍부한 데이터 분석 환경을 갖추고 있습니다. 이 버전의 S는 기호 모델 공식, 모델 행렬 및 데이터 프레임과 같은 오늘날 R 사용자에게 친숙한 표준 인프라 구성 요소와 데이터 분석을 위한 표준 객체 지향 프로그래밍 방법을 도입했습니다. 이러한 사용자 인터페이스는 그 이후에도 실질적으로 변경되지 않았습니다.
 
-## An example
+## 예
 
-To demonstrate these fundamentals, let's use experimental data from @mcdonald2009, by way of @mangiafico2015, on the relationship between the ambient temperature and the rate of cricket chirps per minute. Data were collected for two species: _O. exclamationis_ and _O. niveus_. The data are contained in a data frame called `crickets` with a total of `r nrow(crickets)` data points. These data are shown here in a `r pkg(ggplot2)` graph. 
+이러한 기본 사항을 설명하기 위해 @mangiafico2015를 통해 @mcdonald2009의 실험 데이터를 사용하여 주변 온도와 분당 귀뚜라미 울음소리 비율(chirp rate)의 관계를 살펴보겠습니다. 두 종에 대한 데이터가 수집되었습니다.: _O. exclamationis_ and _O. niveus_. 데이터는 총 `r nrow(crickets)`개의 데이터 포인트를 가진 `crickets`라는 데이터 프레임에 포함되어 있습니다. 이 데이터는 `r pkg(ggplot2)` 그래프에 표시됩니다.
 
 ```{r base-r-cricket-plot, out.width = '70%', fig.width=6, fig.height=4, warning = FALSE}
 library(tidyverse)
@@ -20,98 +20,99 @@ library(tidyverse)
 data(crickets, package = "modeldata")
 names(crickets)
 
-# Plot the temperature on the x-axis, the chirp rate on the y-axis. The plot
-# elements will be colored differently for each species:
+# x축에는 온도, y축에는 귀뚜라미 울음 소리 비율(chirp rate)을 표시합니다. 
+# 그래프의 요소는 각 종에 따라 서로 다른 색상이 지정됩니다.
 ggplot(crickets, aes(x = temp, y = rate, col = species)) + 
-  # Plot points for each data point and color by species
+  # 각 데이터에 대한 포인트 및 종별 색상 그리기
   geom_point() + 
-  # Show a simple linear model fit created separately for each species:
+  # 각 종에 대해 별도로 생성된 단순 선형 모델 적합 표시:
   geom_smooth(method = lm, se = FALSE) + 
   labs(x = "Temperature (C)", y = "Chirp Rate (per minute)")
 ```
  
-The data exhibit fairly linear trends for each species. For a given temperature, _O. exclamationis_ appears to chirp more per minute than the other species. For an inferential model, the researchers might have specified the following null hypotheses prior to seeing the data:
+데이터는 각 종에 대해 상당히 선형적인 경향을 나타냅니다. 주어진 온도에 대해 _O. exclamationis_ 는 다른 종보다 분당 더 많이 짹짹거리는 것처럼 보입니다. 추론 모델의 경우 연구원은 데이터를 보기 전에 다음과 같은 귀무 가설(null hypotheses)을 지정했을 수 있습니다.:
 
- * Temperature has no effect on the chirp rate.
+ * 온도는 chirp rate에 영향을 미치지 않습니다.
 
- * There are no differences between the species' chirp rate. 
+ * 종의 chirp rate 사이에는 차이가 없습니다.
 
-There may be some scientific or practical value in predicting the chirp rate but in this example we will focus on inference.
+chirp rate을 예측하는 데에는 과학적이거나 실용적인 가치가 있을 수 있지만 이 예에서는 추론에 초점을 맞출 것입니다.
 
-To fit an ordinary linear model in R, the `lm()` function is commonly used. The important arguments to this function are a model formula and a data frame that contains the data. The formula is _symbolic_. For example, the simple formula:
+일반 선형 모형을 R에 적합시키기 위해 `lm()` 함수가 일반적으로 사용됩니다. 이 함수에 대한 중요한 인수는 모델 공식과 데이터를 포함하는 데이터 프레임입니다. 식은 _상징적_ 입니다. 예를 들어, 간단한 수식은 다음과 같습니다.:
 
 ```r
 rate ~ temp
 ```
-specifies that the chirp rate is the outcome (since it is on the left-hand side of the tilde `~`) and that the temperature value is the predictor^[Most model functions implicitly add an intercept column.]. Suppose the data contained the time of day in which the measurements were obtained in a column called `time`. The formula:
+chirp rate이 결과이고(물결표 `~`의 왼쪽에 있기 때문에) 예측 변수임을 지정합니다.^[대부분의 모델 함수는 절편(intercept) 열을 내재적으로 추가합니다.] 측정값을 얻은 시간이 `time`이라는 열에 포함되어 있는 데이터를 가정해 보십시오. 수식은 :
 
 ```r
 rate ~ temp + time
 ```
 
-would not add the time and temperature values together. This formula would symbolically represent that temperature and time should be added as separate _main effects_ to the model. A main effect is a model term that contains a single predictor variable. 
+시간과 온도 값을 함께 추가하지 않습니다. 이 수식은 온도와 시간을 모델에 별도의 _주효과_ 로 추가해야 함을 상징적으로 나타냅니다. 주효과는 단일 예측 변수를 포함하는 모델 항입니다.
 
-There are no time measurements in these data but the species can be added to the model in the same way: 
+이 데이터에는 시간 측정이 없지만 같은 방식으로 종을 모델에 추가할 수 있습니다.
 
 ```r
 rate ~ temp + species
 ```
 
-Species is not a quantitative variable; in the data frame, it is represented as a factor column with levels `"O. exclamationis"` and `"O. niveus"`. The vast majority of model functions cannot operate on non-numeric data. For species, the model needs to _encode_ the species data in a numeric format. The most common approach is to use indicator variables (also known as "dummy variables") in place of the original qualitative values. In this instance, since species has two possible values, the model formula will automatically encode this column as numeric by adding a new column that has a value of zero when the species is `"O. exclamationis"` and a value of one when the data correspond to `"O. niveus"`. The underlying formula machinery automatically converts these values for the data set used to create the model, as well as for any new data points (for example, when the model is used for prediction). 
+종은 양적 변수가 아닙니다.; 데이터 프레임에서 `'O. exclamationis'` 및 `'O. niveus'` 수준의 요인 열로 표시됩니다. 대부분의 모델 함수는 숫자가 아닌 데이터에서는 작동할 수 없습니다. 따라서 종의 경우 모델은 종 데이터를 숫자 형식으로 _인코딩_ 해야 합니다. 가장 일반적인 접근 방식은 원래의 정성적 값 대신 지표 변수('더미 변수'라고도 함)를 사용하는 것입니다. 이 경우 종에는 두 가지 가능한 값이 있기 때문에 모델 수식은 종이 `"O. exclamationis"`일 때 값이 0이고, `"O. niveus"` 일 때 1의 값을 새 열을 추가하여 숫자로 자동 인코딩합니다. 기본 수식 기계는 모델을 생성하는 데 사용된 데이터 세트와 새 데이터 요소(예: 모델이 예측에 사용되는 경우)에 대해 이러한 값을 자동으로 변환합니다.
 
 :::rmdnote
-Suppose there were five species instead of two. The model formula would automatically add _four_ additional binary columns that are binary indicators for four of the species. The _reference level_ of the factor (i.e., the first level) is always left out of the predictor set. The idea is that, if you know the values of the four indicator variables, the value of the species can be determined. We discuss binary indicator variables in more detail in Section \@ref(dummies).
+2개가 아닌 5개의 종이 있다고 가정합시다. 모델 공식은 4개의 종에 대한 이진 표시기인 _4개_ 의 추가 이진 열을 자동으로 추가합니다. 요인(즉, 첫 번째 수준)의 _참조 수준_ 은 항상 예측 변수 집합에서 제외됩니다. 네 개의 표시기 변수의 값을 알면 종의 값을 결정할 수 있다는 아이디어입니다. 이진 표시기 변수에 대해서는 \@ref(dummies) 섹션에서 더 자세히 논의합니다.
 :::
 
-The model formula shown above creates a model with different y-intercepts for each species; the slopes of the regression lines could be different for each species as well. To accommodate this structure, an _interaction_ term can be added to the model. This can be specified in a few different ways, and the most basic uses the colon:
+위에 표시된 모델 수식은 각 종에 대해 다른 y-절편을 가진 모델을 생성합니다. 회귀선의 기울기도 종마다 다를 수 있습니다. 이 구조를 수용하기 위해 _interaction_ 용어를 모델에 추가할 수 있습니다. 이것은 몇 가지 다른 방법으로 지정할 수 있으며 가장 기본적인 것은 콜론을 사용합니다.:
 
 ```r
 rate ~ temp + species + temp:species
 
-# A shortcut can be used to expand all interactions containing
-# interactions with two variables:
+# 손쉬운 방법을 사용하여 두 변수와의 상호 작용을 포함하는 모든 상호 작용을 확장할 수 있습니다.:
 rate ~ (temp + species)^2
 
-# Another shortcut to expand factors to include all possible
-# interactions (equivalent for this example):
+# 가능한 모든 상호 작용을 포함하도록 요인을 확장하는 또 다른 손쉬운 방법(이 예에 해당함)
 rate ~ temp * species
 ```
 
-In addition to the convenience of automatically creating indicator variables, the formula offers a few other niceties: 
+표시기 변수를 자동으로 생성하는 편리함 외에도 수식은 몇 가지 다른 장점을 제공합니다.
 
-* _In-line_ functions can be used in the formula. For example, to use the natural log of the temperature, we can create the formula `rate ~ log(temp)`. Since the formula is symbolic by default, literal math can also be applied to the predictors using the identity function `I()`. To use Fahrenheit units, the formula could be `rate ~ I( (temp * 9/5) + 32 )` to convert from Celsius.
+* _In-line_ 함수를 수식에 사용할 수 있습니다. 예를 들어, 온도의 자연 로그를 사용하려면 `rate ~ log(temp)` 수식을 만들 수 있습니다. 수식은 기본적으로 기호이므로, 문자 그대로 수학은 항등 함수`I()`를 사용하는 예측 변수에도 적용될 수 있습니다. 화씨 단위를 사용하려면 섭씨에서 변환하기 위해 수식 `rate ~ I( (temp * 9/5) + 32 )`가 됩니다.
 
-* R has many functions that are useful inside of formulas. For example, `poly(x, 3)` creates linear, quadratic, and cubic terms for `x` to the model as main effects. The `r pkg(splines)` package also has several functions to create nonlinear spline terms in the formula. 
+* R에는 수식 내에서 유용한 많은 함수가 있습니다. 예를 들어, `poly(x, 3)`는 모델에 대해서 `x`에 대한 선형, 2차 및 3차 항을 주효과로 생성합니다. `r pkg(splines)` 패키지에는 수식에서 비선형 스플라인 항을 생성하는 여러 기능도 가지고 있습니다.
 
-* For data sets where there are many predictors, the period shortcut is available. The period represents main effects for all of the columns that are not on the left-hand side of the tilde. Using `~ (.)^3` would create main effects as well as all two- and three-variable interactions to the model. 
+* 예측 변수가 많은 데이터 세트의 경우, 마침표(.)를 사용할 수 있습니다. 마침표는 물결표의 왼쪽에 없는 모든 열에 대한 주효과를 나타냅니다. `~ (.)^3`을 사용하면 모델에 대한 모든 2개 및 3개 변수 상호작용뿐만 아니라 주효과를 생성할 수 있습니다.
+
+귀뚜라미로 돌아가서 양방향 상호 작용 모델을 사용하겠습니다. 이 책에서는 피팅된 모델인 R 객체에 접미사 `_fit`을 사용합니다.
 
 Returning to our chirping crickets, let's use a two-way interaction model. In this book, we use the suffix `_fit` for R objects that are fitted models. 
 
 ```{r base-r-cricket-fit}
 interaction_fit <-  lm(rate ~ (temp + species)^2, data = crickets) 
 
-# To print a short summary of the model:
+# 모델의 간단한 요약을 인쇄하려면:
 interaction_fit
 ```
 
-This output is a little hard to read. For the species indicator variables, R mashes the variable name (`species`) together with the factor level (`O. niveus`) with no delimiter. 
+이 출력은 읽기가 조금 어렵습니다. 종 표시기 변수의 경우 R은 구분 기호 없이 변수 이름(`species`)과 요인 수준(`O. niveus`)을 매시합니다.
 
-Before going into any inferential results for this model, the fit should be assessed using diagnostic plots. We can use the `plot()` method for `lm` objects. This method produces a set of four plots for the object, each showing different aspects of the fit. Two plots are shown here:
+이 모델에 대한 추론 결과로 들어가기 전에, 진단 플롯을 사용하여 피팅을 평가해야 합니다. `lm` 객체에 `plot()` 메소드를 사용할 수 있습니다. 이 메소드는 개체에 대한 4개의 플롯 세트를 생성하며, 각각은 피팅의 다른 측면을 보여줍니다. 두 개의 플롯이 여기에 표시됩니다.:
 
 ```{r interaction-plots, out.width = '100%', fig.width=8, fig.height=4.5, warning = FALSE}
-# Place two plots next to one another:
+# 두 개의 플롯을 나란히 배치:
 par(mfrow = c(1, 2))
 
-# Show residuals vs predicted values:
+# 잔차 대 예측 값 표시:
 plot(interaction_fit, which = 1)
 
-# A normal quantile plot on the residuals:
+# 잔차에 대한 정규 분위수 플롯:
 plot(interaction_fit, which = 2)
 ```
 
-These appear reasonable enough to conduct inferential analysis. 
+이는 추론적 분석을 수행하기에 충분히 합리적으로 보입니다. 
 
 :::rmdnote
+표현식 평가의 기술적인 세부 사항에 관한 한,  R은 _게으릅니다_(열망하는 것과는 대조적으로). 이는 모델 피팅 함수가 일반적으로 가능한 마지막 순간에, 가능한 최소 수량을 계산한다는 것을 의미합니다. 예를 들어, 각 모델 항에 대한 계수 테이블에 관심이 있는 경우 모델과 함께 자동으로 계산되지 않고 대신 `summary()` 메서드를 통해 계산됩니다.
 When it comes to the technical details of evaluating expressions, R is _lazy_ (as opposed to eager). This means that model fitting functions typically compute the minimum possible quantities at the last possible moment. For example, if you are interested in the coefficient table for each model term, this is not automatically computed with the model but is instead computed via the `summary()` method. 
 :::
 
