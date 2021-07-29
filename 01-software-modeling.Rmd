@@ -62,7 +62,7 @@ load("RData/plm_resids.RData")
 
 resid_cols <- RColorBrewer::brewer.pal(8, "Set1")[1:2]
 
-# Red is where intensity is higher than expected
+# 빨간색은 강도가 예상보다 높은 지점입니다
 plm_plot <- 
   plm_resids %>% 
   mutate(sign = ifelse(Intensity < 0, "low", "high")) %>% 
@@ -100,7 +100,7 @@ grid.arrange(plm_plot, ames_plot, ncol = 1)
 
 ### 추론 모델(INFERENTIAL MODELS) {-}
 
-추론 모델의 목표는 통계적 테스트에서 사용되는 방식으로 연구 질문에 대한 결정을 내리거나 특정 가설을 테스트하는 것입니다^[Many specific statistical tests are in fact equivalent to models. For example, t-tests and analysis of variance (ANOVA) methods are particular cases of the generalized linear model.]. 즉, 미리 정의된 추측이나 아이디어에 대해 사실을 진술하는 것입니다. 추론 모델은 많은 경우(전부는 아님)에서 정성적인 설명이 생성됩니다(예: 차이가 '통계적으로 유의미함').
+추론 모델의 목표는 통계적 테스트에서 사용되는 방식으로 연구 질문에 대한 결정을 내리거나 특정 가설을 테스트하는 것입니다^[많은 특정 통계 테스트는 실제로 모델과 동일합니다. 예를 들어, t-검정 및 분산 분석(ANOVA) 방법은 일반화 선형 모델의 특정 사례입니다.]. 즉, 미리 정의된 추측이나 아이디어에 대해 사실을 진술하는 것입니다. 추론 모델은 많은 경우(전부는 아님)에서 정성적인 설명이 생성됩니다(예: 차이가 '통계적으로 유의미함').
 
 예를 들어, 어떤 임상 시험을 한다고 해봅시다. 이 임상 시험의 목표는 새로운 치료법이 기존 치료법이나 치료하지 않는 것보다 수명 연장에 더 효과적인지 아닌지를 확인하는 것입니다. 이 임상 시험에서  _귀무가설(null hypothesis)_ 은 두 치료 그룹의 중앙 생존 시간이 동일하고(즉, 새로운 치료법과 기존 치료법에 차이가 없고), _대립가설(alternative hypothesis)_ 은 새로운 치료법의 중앙 생존이 더 높다는 것입니다(즉, 새로운 치료법과 기존 치료법에 차이가 '통계적으로 유의미함'). 이 시도가 모델링을 통한 전통적인 귀무가설 유의성 검정을 사용하여 평가된 경우 유의성 검정은 데이터에 대한 일련의 가정을 기반으로 하는 사전 정의된 방법론을 사용하여 p-값을 생성합니다. 모델의 결과에서 p-값이 작으면 새로운 치료법이 환자의 수명을 연장하는 데 도움이 된다는 것을 나타내고(if p-value<0.05, 대립가설 채택), p-값에 크면 그러한 차이가 없다는 결론을 내릴 것입니다(if p-value>0.05, 귀무가설 채택). 이러한 증거 부족은 치료가 효과가 없는 것을 포함하여 여러 가지 이유 때문일 수 있습니다.
 
