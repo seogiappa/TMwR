@@ -85,8 +85,6 @@ rate ~ temp * species
 
 귀뚜라미로 돌아가서 양방향 상호 작용 모델을 사용하겠습니다. 이 책에서는 피팅된 모델인 R 객체에 접미사 `_fit`을 사용합니다.
 
-Returning to our chirping crickets, let's use a two-way interaction model. In this book, we use the suffix `_fit` for R objects that are fitted models. 
-
 ```{r base-r-cricket-fit}
 interaction_fit <-  lm(rate ~ (temp + species)^2, data = crickets) 
 
@@ -113,34 +111,33 @@ plot(interaction_fit, which = 2)
 
 :::rmdnote
 표현식 평가의 기술적인 세부 사항에 관한 한,  R은 _게으릅니다_(열망하는 것과는 대조적으로). 이는 모델 피팅 함수가 일반적으로 가능한 마지막 순간에, 가능한 최소 수량을 계산한다는 것을 의미합니다. 예를 들어, 각 모델 항에 대한 계수 테이블에 관심이 있는 경우 모델과 함께 자동으로 계산되지 않고 대신 `summary()` 메서드를 통해 계산됩니다.
-When it comes to the technical details of evaluating expressions, R is _lazy_ (as opposed to eager). This means that model fitting functions typically compute the minimum possible quantities at the last possible moment. For example, if you are interested in the coefficient table for each model term, this is not automatically computed with the model but is instead computed via the `summary()` method. 
 :::
 
-Our next order of business with the crickets is to assess if the inclusion of the interaction term is necessary. The most appropriate approach for this model is to re-compute the model without the interaction term and use the `anova()` method. 
+귀뚜라미에 대한 우리의 다음 작업 순서는 상호 작용 용어의 포함이 필요한지 평가하는 것입니다. 이 모델에 가장 적합한 접근 방식은 상호작용 항 없이 모델을 다시 계산하고 `anova()` 메소드를 사용하는 것입니다.
 
 ```{r base-r-cricket-anova}
-# Fit a reduced model:
+# 축소된 모델 피팅:
 main_effect_fit <-  lm(rate ~ temp + species, data = crickets) 
 
-# Compare the two:
+# 둘을 비교:
 anova(main_effect_fit, interaction_fit)
 ```
 
-This statistical test generates a p-value of `r format.pval(anova(interaction_fit, main_effect_fit)[2,6])`. This implies that there is a lack of evidence for the alternative hypothesis that the interaction term is needed by the model. For this reason, we will conduct further analysis on the model without the interaction. 
+이 통계 테스트는 `r format.pval(anova(interaction_fit, main_effect_fit)[2,6])`의 p-값을 생성합니다. 이것은 상호작용 항이 모델에 필요하다는 대립 가설에 대한 증거가 부족함을 의미합니다(즉, p-value > 0.05 이므로 귀무가설 채택). 이러한 이유로 우리는 상호 작용이 없는 모델에 대해 추가 분석을 수행할 것입니다.
 
-Residual plots should be re-assessed to make sure that our theoretical assumptions are valid enough to trust the p-values produced by the model (plots not shown here but spoiler alert: they are). 
+잔차 플롯은 우리의 이론적 가정이 모델에 의해 생성된 p-값을 신뢰할 수 있을 만큼 충분히 유효한지 확인하기 위해 재평가되어야 합니다(플롯이 여기에 표시되지 않았지만 스포일러 경고:있음).
 
-We can use the `summary()` method to inspect the coefficients, standard errors, and p-values of each model term: 
+`summary()` 메서드를 사용하여 각 모델 항의 계수, 표준 오차 및 p-값을 검사할 수 있습니다.: 
 
 ```{r base-r-main-coef}
 summary(main_effect_fit)
 ```
 
-The chirp rate for each species increases by `r round(coef(main_effect_fit)[2], 2)` chirps as the temperature increases by a single degree. This term shows strong statistical significance as evidenced by the p-value.  The species term has a value of `r round(coef(main_effect_fit)[3], 2)`. This indicates that, across all temperature values, _O. niveus_ has a chirp rate that is about `r floor(abs(coef(main_effect_fit)[3]))` fewer chirps per minute than _O. exclamationis_. Similar to the temperature term, the species effect is associated with a very small p-value.  
+온도가 1도 증가함에 따라 각 종에 대한 chirp rate은 `r round(coef(main_effect_fit)[2], 2)` chirps 만큼 증가합니다. 이 항은 p-값에 의해 입증된 바와 같이 강력한 통계적 유의성을 보여줍니다. 종 항은 `r round(coef(main_effect_fit)[3], 2)`의 값을 갖습니다. 이것은 모든 온도 값에서 _O. niveus_가  _O. exclamationis_ 보다 분당 약 `r floor(abs(coef(main_effect_fit)[3]))`번 적은 chirps 값을 갖는다는 것을 나타냅니다. 온도 항과 유사하게 종 효과는 매우 작은 p-값을 가지며 강력한 통계적으로 유의합니다.
 
-The only issue in this analysis is the intercept value. It indicates that at 0 C, there are negative chirps per minute for both species. While this doesn't make sense, the data only go as low as `r min(crickets$temp)` C and interpreting the model at 0 C would be an _extrapolation_. This would be a bad idea. That being said, the model fit is good within the _applicable range_ of the temperature values; the conclusions should be limited to the observed temperature range. 
+이 분석에서 유일한 이슈는 절편 값입니다. 이는 0 C에서 두 종 모두에 대해 분당 음의 chirps 값을 갖습니다. 이것은 말이 되지 않지만 데이터는 `r min(crickets$temp)` C 까지만 내려가며 0C에서 모델을 해석하는 것은 외삽법이 될 것입니다(외삽법(extrapolation): 특정한 두 점 바깥에 놓여있는 값을 구하는 방법 <-> 내간법(Interpolation)). 이것은 좋지 않습니다. 즉, 모델 적합성은 적용 가능한 온도 값 범위 내에 있어야 한다는 뜻입니다. 결론은 관찰된 온도 범위로 제한되어야 합니다.
 
-If we needed to estimate the chirp rate at a temperature that was not observed in the experiment, we could use the `predict()` method. It takes the model object and a data frame of new values for prediction. For example, the model estimates the chirp rate for _O. exclamationis_ for temperatures between 15 C and 20 C can be computed via:
+실험에서 관찰되지 않은 온도에서 chirp rate을 추정해야 하는 경우 `predict()` 메소드를 사용할 수 있습니다. 예측을 위해서 이 모델 객체와 새 값의 데이터 프레임을 사용합니다. 예를 들어, 이 모델은 15C와 20C 사이의 온도에 대한 _O. exclamationis_ 의 chirp rate을 추정하며 다음을 통해 계산할 수 있습니다.:
 
 ```{r base-r-cricket-pred}
 new_values <- data.frame(species = "O. exclamationis", temp = 15:20)
@@ -148,36 +145,36 @@ predict(main_effect_fit, new_values)
 ```
 
 :::rmdwarning
-Note that the non-numeric value of `species` is passed to the predict method, as opposed to the numeric, binary indicator variable.  
+`species`의 숫자가 아닌 값은 숫자,이진 표시기 변수와 달리 predict 메소드로 전달됩니다.
 :::
 
-While this analysis has obviously not been an exhaustive demonstration of R's modeling capabilities, it does highlight some major features important for the rest of this book: 
+이 분석이 R의 모델링 기능에 대한 완전한 데모는 아니지만, 이 책의 나머지 부분에서 다음의 중요한 몇 가지 주요 기능을 강조합니다.:
 
- * The language has an expressive syntax for specifying model terms for both simple and quite complex models.
+ * 이 언어는 단순 모델과 상당히 복잡한 모델 모두에 대한 모델 항을 지정하는 표현 구문을 가지고 있습니다.
+ 
+ * R 수식 메소드는 예측이 생성될 때 새로운 데이터에도 적용될 모델링에 대해서 많은 편의성을 제공합니다.
 
- * The R formula method has many conveniences for modeling that are also applied to new data when predictions are generated. 
+ * 피팅된 모델이 생성된 후 특정 계산을 수행하는 데 사용할 수 있는 수많은 도우미 함수(예: `anova()`, `summary()` 및 `predict()`)가 있습니다.
 
- * There are numerous helper functions (e.g., `anova()`, `summary()` and `predict()`) that you can use to conduct specific calculations after the fitted model is created. 
+마지막으로, 앞서 언급했듯이 이 프레임워크는 1992년에 처음 출간되었습니다. 위의 아이디어와 메소드의 대부분은 그 기간에 개발되었지만 오늘날에도 여전히 관련성이 있습니다. S 언어와 확장 R이 처음부터 데이터 분석을 위해 설계되었음을 강조합니다.
 
-Finally, as previously mentioned, this framework was first published in 1992. Most of the ideas and methods above were developed in that period but have remained remarkably relevant to this day. It highlights that the S language and, by extension R, has been designed for data analysis since its inception.  
+## R 수식은 무엇을합니까? {#formula}
 
-## What does the R formula do? {#formula}
+R 모델 수식은 많은 모델링 패키지에서 사용됩니다. 일반적으로 여러 용도로 사용됩니다.: 
 
-The R model formula is used by many modeling packages. It usually serves multiple purposes: 
+ * 수식은 모델에서 사용하는 열을 정의합니다.
 
- * The formula defines the columns that are used by the model.  
+ * 표준 R 시스템은 수식을 사용하여 열을 적절한 형식으로 인코딩합니다.  
 
- * The standard R machinery uses the formula to encode the columns into an appropriate format. 
+ * 열의 역할은 수식에 의해 정의됩니다.
 
- * The roles of the columns are defined by the formula. 
-
-For the most part, practitioners' conception of what the formula does is dominated by the last purpose. Our focus when typing out a formula is often to declare how the columns should be used. For example, the previous specification we discussed sets up predictors to be used in a specific way: 
+대부분의 경우 수식이 무엇을 하는지에 대한 실무자의 개념은 마지막 목적에 의해 결정됩니다. 수식을 입력할 때 우리의 초점은 종종 열을 어떻게 사용해야 하는지 선언하는 것입니다. 예를 들어, 앞에서 설명한 사양에서는 사용할 예측 변수를 다음과 같은 특정 방식으로 설정합니다.:
 
 ```r
 (temp + species)^2
 ```
 
-Our focus, when seeing this, is that there are two predictors and the model should contain their main effects and the two-way interactions.  However, this formula also implies that, since `species` is a factor, it should also create indicator variable columns for this predictor (see Section \@ref(dummies)) and multiply those columns by the `temp` column to create the interactions. This transformation represents the second bullet point above; the formula also defines _how each column is encoded_ and can create additional columns that are not in the original data. 
+이것을 보면 두 개의 예측 변수가 있고 모델에 주요 효과와 양방향 상호 작용이 포함된다는 것을 알 수 있습니다. 그러나 이 수식은 `species`가 요인이기 때문에 이 예측 변수(섹션 \@ref(dummies) 참조)에 대한 표시기 변수 열도 생성해야 하고,  이 열에 `temp` 열을 곱하여 상호 작용을 생성해야 한다는 것을 의미합니다. 이 변환은 위의 두 번째 글머리 내용을 나타냅니다. 수식은 또한 _각 열이 인코딩되는 방식_ 을 정의하고 원본 데이터에 없는 추가 열을 생성할 수 있습니다.
 
 :::rmdwarning
 This is an important point which will come up multiple times in this text, especially when we discuss more complex feature engineering in Chapter \@ref(recipes) and beyond. The formula in R has some limitations and our approaches to overcoming them contend with all three aspects listed above. 
