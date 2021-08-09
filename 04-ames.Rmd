@@ -7,8 +7,9 @@ tidymodels_prefer()
 
 # (PART\*) Basics {-} 
 
-# The Ames housing data {#ames}
+# Ames 주택 데이터 {#ames}
 
+Ames 주택 데이터 세트[@ames]는 이 책 전체에서 사용할 모델에 대해 배울 수 있는 훌륭한 리소스입니다. 여기에는 다음과 관련된 열을 포함하여 아이오와주 Ames 주택의`r format(nrow(ames), big.mark = ',')` 속성에 대한 데이터가 포함되어 있습니다.
 The Ames housing data set [@ames] is an excellent resource for learning about models that we will use throughout this book. It contains data on `r format(nrow(ames), big.mark = ",")` properties in Ames, Iowa, including columns related to 
 
  * house characteristics (bedrooms, garage, fireplace, pool, porch, etc.),
@@ -18,32 +19,32 @@ The Ames housing data set [@ames] is an excellent resource for learning about mo
  * sale price.
 
 :::rmdnote
-Our goal for these data is to predict the sale price of a house based on its other characteristics. 
+우리의 목표는 다른 특성을 기반으로 주택의 판매 가격을 예측하는 것입니다.
 :::
 
-The raw data are provided by the authors, but in our analyses in this book, we use a transformed version available in the `r pkg(modeldata)` package. This version has several changes and improvements to the data^[For a complete account of the differences, see [this script](https://github.com/topepo/AmesHousing/blob/master/R/make_ames.R).]. For example, the longitude and latitude values have been determined for each property. Also, some columns were modified to be more analysis ready. For example: 
+원시 데이터는 저자가 제공하지만 이 책의 분석에서는 `r pkg(modeldata)` 패키지에서 사용할 수 있는 변환된 버전을 사용합니다. 이 버전에는 데이터에 대한 몇 가지 변경 및 개선 사항이 있습니다.^[차이점에 대한 전체 설명은 [이 스크립트](https://github.com/topepo/AmesHousing/blob/master/R/make_ames.R)를 참조하세요.] . 예를 들어, 각 속성에 대해 경도 및 위도 값이 결정되었고, 더 많은 분석을 준비할 수 있도록 일부 열이 수정되었습니다. 예를 들어:
 
- * In the raw data, if a house did not have a particular feature, it was implicitly encoded as missing. For example, there were `r format(sum(ames$Alley == "No_Alley_Access"), big.mark = ",")` properties that did not have an alleyway. Instead of leaving these as missing, they were relabeled in the transformed version to indicate that no alley was available.
-
- * The categorical predictors were converted to R's factor data type. While both the tidyverse and base R have moved away from importing data as factors by default, this data type is a better approach for storing qualitative data for _modeling_ than simple strings.  
+ * 원시 데이터에서 어떤 특징이 없는 것은 내부적으로 누락된 것으로 인코딩되었습니다. 예를 들어 골목(alleyway) `r format(sum(ames$Alley == 'No_Alley_Access'), big.mark = ',')`의 속성이 없는 경우, 이들을 누락된 상태로 두는 대신 변형된 버전에서 레이블을 다시 지정하여 사용할 수 있는 골목이 없음으로 표현됩니다.
  
- * We removed a set of quality descriptors for each house since they are more like outcomes than predictors.
+ * 범주형 예측 변수는 R의 요인(factor) 데이터 유형으로 변환되었습니다. tidyverse와 base R 모두 기본적으로 데이터를 요인으로 사용하지 않기로 했지만, 이 데이터 유형은 단순한 문자열보다 _modeling_ 을 위한 정성적 데이터를 저장하는 더 나은 접근 방식입니다.
 
-To load the data: 
+ *  예측 변수보다 결과에 가깝기 때문에 각 주택에 대한 품질 설명자 세트를 제거했습니다.
+ 
+데이터를 로드하기 위해: 
 
 ```{r ames-load, warning = FALSE, message = FALSE}
-library(modeldata) # This is also loaded by the tidymodels package
+library(modeldata) # 이것은 또한 tidymodels 패키지에 의해서도 로드됩니다.
 data(ames)
 
-# or, in one line:
+# 또는 한줄로:
 data(ames, package = "modeldata")
 
 dim(ames)
 ```
 
-## Exploring important features
+## 중요한 특징 탐색
 
-It makes sense to start with the outcome we want to predict: the last sale price of the house (in USD): 
+우리가 예측하고자 하는 결과부터 시작하는 것이 합리적입니다.: 주택의 마지막 판매 가격(USD):
 
 ```{r ames-sale_price, out.width = '100%', fig.width=8, fig.height=3}
 library(tidymodels)
@@ -53,7 +54,7 @@ ggplot(ames, aes(x = Sale_Price)) +
   geom_histogram(bins = 50)
 ```
 
-The data are right-skewed; there are more inexpensive houses than expensive ones. The median sale price was \$`r format(median(ames$Sale_Price), big.mark = ",")` and the most expensive house was \$`r format(max(ames$Sale_Price), big.mark = ",")`. When modeling this outcome, a strong argument can be made that the price should be log-transformed. The advantages of doing this are that no houses would be predicted with negative sale prices and that errors in predicting expensive houses will not have an undue influence on the model. Also, from a statistical perspective, a logarithmic transform may also _stabilize the variance_ in a way that makes inference more legitimate. Let's visualize the transformed data:
+데이터가 오른쪽으로 치우쳐 있습니다(right-skewed); 비싼 집보다 싼 집이 더 많습니다. 중간 매매가는 $`r format(median(ames$Sale_Price), big.mark = ',')`이었고 가장 비싼 집은 $`r format(max(ames$Sale_Price), big.mark = ',')`입니다. 이 결과를 모델링할 때 가격을 로그 변환해야 한다는 강력한 주장이 제기될 수 있습니다. 이렇게 하면 음의 판매 가격으로 예측되는 주택이 없고 비싼 주택을 예측하는 오류가 모델에 과도한 영향을 미치지 않는다는 장점이 있습니다. 또한 통계적 관점에서 로그 변환은 추론을 보다 합법적으로 만드는 방식으로 _분산을 안정화할_ 수도 있습니다. 변환된 데이터를 시각화해 보겠습니다.(로그 변환은 정규분포가 아니었던 분포를 정규분포로 변환시키는데 사용하는 기법으로 로그 변환, 제곱근 변환 등 다양한 기법이 있음-역자)
 
 ```{r ames-log-sale_price, out.width = '100%', fig.width=8, fig.height=3}
 ggplot(ames, aes(x = Sale_Price)) + 
@@ -61,77 +62,77 @@ ggplot(ames, aes(x = Sale_Price)) +
   scale_x_log10()
 ```
 
-While not perfect, this will probably result in better models than using the untransformed data. 
+완벽하지는 않지만 변환되지 않은 데이터를 사용하는 것보다 더 나은 모델이 될 수 있습니다.
 
 :::rmdwarning
-The downside to transforming the outcome is mostly related to interpretation.  
+결과 변환의 단점은 대부분 해석과 관련이 있습니다.
 :::
 
-The units of the model coefficients might be more difficult to interpret, as will measures of performance. For example, the root mean squared error (RMSE) is a common performance metric that is used in regression models. It uses the difference between the observed and predicted values in its calculations. If the sale price is on the log scale, these differences (i.e. the residuals) are also in log units. For this reason, it can be difficult to understand the quality of a model whose RMSE is 0.15 log units. 
+모델 계수의 단위는 성능 측정과 마찬가지로 해석하기 더 어려울 수 있습니다. 예를 들어, RMSE(평균제곱근오차)는 회귀 모델에 사용되는 일반적인 성능 메트릭입니다. 계산에서 관찰된 값과 예측된 값의 차이를 사용합니다. 판매 가격이 로그 척도인 경우 이러한 차이(즉, 잔차)도 로그 단위입니다. 이러한 이유로 RMSE가 0.15 로그 단위인 모델의 품질을 이해하기 어려울 수 있습니다.
 
-Despite these drawbacks, the models used in this book utilize the log transformation for this outcome. _From this point on_, the outcome column is pre-logged in the `ames` data frame: 
+이러한 단점에도 불구하고 이 책에서 사용된 모델은 로그 변환을 사용합니다. _이 시점부터_, 결과 열은 `ames` 데이터 프레임에 미리 기록됩니다.:
 
 ```{r ames-log}
 ames <- ames %>% mutate(Sale_Price = log10(Sale_Price))
 ```
 
-Another important aspect of these data for our modeling are their geographic locations. This spatial information is contained in the data in two ways: a qualitative `Neighborhood` label as well as quantitative longitude and latitude data. To visualize the spatial information, let's use both together to plot the data on a map and color by neighborhood: 
+모델링을 위한 이러한 데이터의 또 다른 중요한 측면은 지리적 위치입니다. 이 공간 정보는 정성적 `Neighborhood` 레이블과 정량적 경도 및 위도 데이터의 두 가지 방식으로 데이터에 포함됩니다. 공간 정보를 시각화하기 위해 두 가지를 함께 사용하여 지도에 데이터를 표시하고 이웃(neighborhood)별로 색상을 지정해 보겠습니다.
 
 ```{r ames-map, out.width = "100%", echo = FALSE, fig.cap = "Neighborhoods in Ames IA", warning = FALSE}
 # See file extras/ames_sf.R
 knitr::include_graphics("premade/ames.png")
 ```
 
-We can see a few noticeable patterns. First, there is a void of data points in the center of Ames. This corresponds to Iowa State University. Second, while there are a number of neighborhoods that are geographically isolated, there are others that are adjacent to each other. For example, Timberland is located apart from almost all other neighborhoods:
+몇 가지 눈에 띄는 패턴을 볼 수 있습니다. 첫째, Ames의 중앙에 데이터 포인트가 없습니다. 이것은 아이오와 주립 대학에 해당합니다. 둘째, 지리적으로 고립된 이웃이 많지만 서로 인접해 있는 이웃도 있습니다. 예를 들어 Timberland는 거의 모든 다른 지역과 떨어져 있습니다.
 
 ```{r ames-timberland , out.width = "80%", echo = FALSE, warning = FALSE}
 # See file extras/ames_sf.R
 knitr::include_graphics("premade/timberland.png")
 ```
 
-The Meadow Village neighborhood in Southwest Ames is like an island of properties ensconced inside the sea of properties that make up the Mitchell neighborhood: 
+Southwest Ames의 메도우 빌리지(Meadow Village) 지역은 Mitchell 지역을 구성하는 부동산의 바다 안에 자리 잡은 부동산의 섬과 같습니다.
 
 ```{r ames-mitchell , out.width = "60%", echo = FALSE, warning = FALSE}
 # See file extras/ames_sf.R
 knitr::include_graphics("premade/mitchell.png")
 ```
  
-A detailed inspection of the map also shows that the neighborhood labels are not completely reliable. For example, there are some properties labeled as being in Northridge that are surrounded by houses in the adjacent Somerset neighborhood: 
+지도를 자세히 조사한 결과 neighborhood 레이블이 완전히 신뢰할 수 없음을 알 수 있습니다. 예를 들어 Northridge에 있는 것으로 레이블이 지정된 일부 속성은 인접한 Somerset 지역의 주택으로 둘러싸여 있습니다.
 
 ```{r ames-northridge , out.width = "90%", echo = FALSE, warning = FALSE}
 # See file extras/ames_sf.R
 knitr::include_graphics("premade/northridge.png")
 ```
 
-Also, there are ten isolated houses labeled as being in Crawford but are not close to the majority of the other houses in that neighborhood:
+또한 Crawford에 있는 것으로 표시된 10개의 고립된 집이 있지만 그 이웃의 다른 집 대부분과 가깝지는 않습니다.
 
 ```{r ames-crawford , out.width = "80%", echo = FALSE, warning = FALSE}
 # See file extras/ames_sf.R
 knitr::include_graphics("premade/crawford.png")
 ```
 
-Also notable is the "Iowa Department of Transportation (DOT) and Rail Road" neighborhood adjacent to the main road on the east side of Ames. There are several clusters of houses within this neighborhood as well as some longitudinal outliers; the two houses furthest east are isolated from the other locations. 
+또한 주목할만한 것은 Ames 동쪽의 주요 도로에 인접한 'Iowa Department of Transportation (DOT) and Rail Road'입니다. 이 근처에는 여러 개의 주택 군집과 일부 종적 특이치가 있습니다. 가장 동쪽에 있는 두 집은 다른 위치와 격리되어 있습니다.
 
 ```{r ames-dot_rr , out.width = "100%", echo = FALSE, warning = FALSE}
 # See file extras/ames_sf.R
 knitr::include_graphics("premade/dot_rr.png")
 ```
 
-As previously described in Chapter \@ref(software-modeling), it is critical to conduct _exploratory data analysis_ prior to beginning any modeling. These housing data have characteristics that present interesting challenges about how the data should be processed and modeled. We describe many of these in later chapters. Some basic questions that could be examined include: 
+앞서 \@ref(software-modeling) 장에서 설명한 대로 모델링을 시작하기 전에 _탐색적 데이터 분석_ 을 수행하는 것이 중요합니다. 이러한 주택 데이터는 데이터를 처리하고 모델링하는 방법에 대한 흥미로운 과제를 제시합니다. 이 중 다수는 뒷 장에서 설명합니다. 검토할 수 있는 몇 가지 기본 질문은 다음과 같습니다.:
 
- * Are there any odd or noticeable things about the distributions of the individual predictors? Is there much skewness or any pathological distributions? 
-
- * Are there high correlations between predictors? For example, there are multiple predictors related to the size of the house. Are some redundant?
-
- * Are there associations between predictors and the outcomes? 
-
-Many of these questions will be revisited as these data are used in upcoming examples. 
-
-## Chapter summary {#ames-summary}
+ * 개별 예측 변수의 분포에 대해 이상하거나 눈에 띄는 것이 있습니까? 왜도가 많거나 병리학적 분포가 있습니까?
  
-This chapter introduced a data set used in later chapters to demonstrate tidymodels syntax and investigated some of its characteristics. Exploratory data analysis like this is an essential component of any modeling project; EDA uncovers information that contributes to better modeling practice.
+ * 예측변수들 간에 높은 상관관계가 있는가? 예를 들어 집의 크기와 관련된 여러 예측 변수가 있습니다. 일부 중복됩니까?
 
-The important code that we will carry forward into subsequent chapters is:
+ * 예측 변수와 결과 사이에 연관성이 있습니까? 
+
+이 데이터가 다음 예제에서 사용됨에 따라 이러한 질문 중 많은 부분을 다시 살펴볼 것입니다. 
+
+## 단원 요약 {#ames-summary}
+ 
+이 장에서는 다음 장에서 Tidymodel 구문을 보여주기 위해 사용되는 데이터 세트를 소개하고 그 특성 중 일부를 조사했습니다. 이와 같은 탐색적 데이터 분석은 모든 모델링 프로젝트의 필수 구성 요소입니다. EDA는 더 나은 모델링 관행에 기여하는 정보를 발견합니다.
+
+다음 장에서 다룰 중요한 코드는 다음과 같습니다.:
  
  
 ```{r ames-summary, eval = FALSE}
