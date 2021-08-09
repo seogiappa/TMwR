@@ -10,7 +10,6 @@ tidymodels_prefer()
 # Ames 주택 데이터 {#ames}
 
 Ames 주택 데이터 세트[@ames]는 이 책 전체에서 사용할 모델에 대해 배울 수 있는 훌륭한 리소스입니다. 여기에는 다음과 관련된 열을 포함하여 아이오와주 Ames 주택의`r format(nrow(ames), big.mark = ',')` 속성에 대한 데이터가 포함되어 있습니다.
-The Ames housing data set [@ames] is an excellent resource for learning about models that we will use throughout this book. It contains data on `r format(nrow(ames), big.mark = ",")` properties in Ames, Iowa, including columns related to 
 
  * house characteristics (bedrooms, garage, fireplace, pool, porch, etc.),
  * location (neighborhood),
