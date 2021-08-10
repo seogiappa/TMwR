@@ -8,27 +8,27 @@ source("ames_snippets.R")
 
 # Spending our data {#splitting}
 
-There are several steps to create a useful model, including parameter estimation, model selection and tuning, and performance assessment. At the start of a new project, there is usually an initial finite pool of data available for all these tasks. How should the data be applied to these steps? The idea of _data spending_ is an important first consideration when modeling, especially as it relates to empirical validation. 
+매개변수 추정, 모델 선택 및 조정, 성능 평가를 포함하여 유용한 모델을 생성하는 몇 가지 단계가 있습니다. 새 프로젝트를 시작할 때 일반적으로 이러한 모든 작업에 사용할 수 있는 초기의 유한한 데이터 풀이 있습니다. 이 단계에 데이터를 어떻게 적용해야 할까요? _data spending_ 이라는 아이디어는 특히 경험적 검증과 관련하여 모델링할 때 중요한 첫 번째 고려 사항입니다.
 
-When there are copious amounts of data available, a smart strategy is to allocate specific subsets of data for different tasks, as opposed to allocating the largest possible amount to the model parameter estimation only. There may be questions about many modeling project steps that must be answered with limited prior knowledge. For example, one possible strategy (when both data and predictors are abundant) is to spend a specific subset of data to determine which predictors are informative, before considering parameter estimation at all. 
+사용 가능한 데이터의 양이 많을 경우 모델 매개변수 추정에만 가능한 한 많은 양을 할당하는 것이 아니라 서로 다른 작업에 대해 특정 데이터 하위 집합을 할당하는 것이 현명한 전략입니다. 제한된 사전 지식으로 답변해야 하는 많은 모델링 프로젝트 단계에 대한 질문이 있을 수 있습니다. 예를 들어, 매개변수 추정을 고려하기 전에(데이터와 예측 변수가 모두 풍부한 경우) 데이터의 특정 부분 집합을 사용하여 어떤 예측 변수가 유용한지 결정하는 것이 하나의 가능한 전략입니다.
 
 :::rmdwarning
-As data are reused for multiple tasks, certain risks increase, such as the risks of adding bias or large effects from methodological errors.
+데이터가 여러 작업에 재사용되면 치우침이나 방법론적 오류에 의해 큰 영향을 미치는 등의 특정 위험이 증가합니다.
 :::
 
-If the initial pool of data available is not huge, there will be some overlap of how and when our data is "spent" or allocated, and a solid methodology for data spending is important. This chapter demonstrates the basics of _splitting_ our initial pool of samples for different purposes. 
+사용 가능한 초기 데이터 풀이 크지 않은 경우 데이터가 "spent"되거나 할당되는 방법과 시기가 약간 겹치게 되며 데이터 소비(data spending)에 대한 확실한 방법론이 중요합니다. 이 장에서는 다양한 목적을 위해 초기 샘플 풀을 _분할(splitting)_ 하는 기본 사항을 보여줍니다.
 
-## Common methods for splitting data {#splitting-methods}
+## 데이터 분할을 위한 일반적인 방법 {#splitting-methods}
 
-The primary approach for empirical model validation is to split the existing pool of data into two distinct sets. Some observations are used to develop and optimize the model. This _training set_ is usually the majority of the data. These data are a sandbox for model building where different models can be fit, feature engineering strategies are investigated, and so on. We as modeling practitioners spend the vast majority of the modeling process using the training set as the substrate to develop the model.  
+경험적 모델 검증을 위한 기본 접근 방식은 기존 데이터 풀을 두 개의 개별 세트(_훈련 세트(training set)_ 와 _시험 세트(test set)_)로 분할하는 것입니다. 훈련 세트는 모델을 개발하고 최적화하는 데 사용되는 대부분의 데이터입니다. 이 데이터 세트는 다양한 모델이 적합할 수 있는 모델 구축을 위한 샌드박스이며, 특징 공학 전략을 조사하는 등의 작업을 수행합니다. 모델링 실무자들은 모델을 개발하기 위하여 훈련 세트를 사용하여 모델링 프로세스의 대부분을 보냅니다.
 
-The other portion of the observations are placed into the _test set_. This is held in reserve until one or two models are chosen as the methods that are most likely to succeed. The test set is then used as the final arbiter to determine the efficacy of the model. It is critical to only look at the test set once; otherwise, it becomes part of the modeling process. 
+_시험 세트(test set)_ 는 훈련 세트에서 가장 성공할 가능성이 있는 하나 또는 두 개의 모델이 선택될 때까지 유보됩니다. 훈련 세트에서 모델을 선택한 다음 테스트 세트는 모델의 효율성을 결정하기 위한 최종 중재자로 사용됩니다. 테스트 세트를 한 번만 사용하는 것이 중요합니다. 그렇지 않으면 테스트 세트가 모델링 프로세스의 일부가 됩니다.
 
 :::rmdnote
-How should we conduct this split of the data? This depends on the context. 
+이 데이터 분할을 어떻게 수행할까요? 이것은 컨텍스트에 따라 다릅니다.
 :::
 
-Suppose we allocate 80% of the data to the training set and the remaining 20% for testing.  The most common method is to use simple random sampling. The [`r pkg(rsample)`](https://rsample.tidymodels.org/) package has tools for making data splits such as this; the function `initial_split()` was created for this purpose. It takes the data frame as an argument as well as the proportion to be placed into training. Using the previous data frame produced by the code snippet from the summary in Section \@ref(ames-summary): 
+데이터의 80%를 훈련 세트에 할당하고 나머지 20%를 테스트에 할당한다고 가정합니다. 가장 일반적인 방법은 단순 무작위 샘플링을 사용하는 것입니다. [`r pkg(rsample)`](https://rsample.tidymodels.org/) 패키지에는 다음과 같은 데이터 분할 도구가 있습니다. 이를 위해 `initial_split()` 함수가 생성되었습니다. 데이터 프레임을 인수로 사용할 뿐 아니라 훈련에 배치할 비율도 고려합니다. \@ref(ames-summary) 섹션의 요약에서 코드 조각으로 생성된 이전 데이터 프레임을 사용합니다.:
 
 ```{r ames-split, message = FALSE, warning = FALSE}
 library(tidymodels)
@@ -43,9 +43,9 @@ ames_split <- initial_split(ames, prop = 0.80)
 ames_split
 ```
 
-The printed information denotes the amount of data in the training set ($n = `r format(nrow(training(ames_split)), big.mark = ",")`$), the amount in the test set ($n = `r format(nrow(testing(ames_split)), big.mark = ",")`$), and the size of the original pool of samples  ($n = `r format(nrow(ames), big.mark = ",")`$). 
+인쇄된 정보는 훈련 세트($n = `r format(nrow(training(ames_split)), big.mark = ',')`$)의 데이터 양, 테스트 세트($n = `r format(nrow(testing(ames_split)), big.mark = ',')`$) 및 원본 샘플 풀의 크기($n = `r format(nrow(ames), big.mark = ',')`$)를 나타냅니다.
 
-The object `ames_split` is an `rsplit` object and only contains the partitioning information; to get the resulting data sets, we apply two more functions:
+`ames_split` 객체는 `rsplit` 객체이며 파티션 정보만 포함합니다. 결과 데이터 세트를 얻기 위해 다음 두 가지 함수를 추가로 적용합니다.:
 
 ```{r ames-split-df}
 ames_train <- training(ames_split)
@@ -54,11 +54,11 @@ ames_test  <-  testing(ames_split)
 dim(ames_train)
 ```
 
-These objects are data frames with the same _columns_ as the original data but only the appropriate _rows_ for each set. 
+이러한 객체는 원본 데이터와 동일한 _컬럼_ 을 가진 데이터 프레임이지만 각 집합에 대해 적절한 _행_ 만 있습니다.
 
-Simple random sampling is appropriate in many cases but there are exceptions. When there is a dramatic _class imbalance_ in classification problems, one class occurs much less frequently than another. Using a simple random sample may haphazardly allocate these infrequent samples disproportionately into the training or test set. To avoid this, _stratified sampling_ can be used. The training/test split is conducted separately within each class and then these subsamples are combined into the overall training and test set. For regression problems, the outcome data can be artificially binned into _quartiles_ and then stratified sampling conducted four separate times. This is an effective method for keeping the distributions of the outcome similar between the training and test set. 
+단순 무작위 샘플링은 많은 경우에 적합하지만 예외가 있습니다. 분류 문제에 심각한 _클래스 불균형_ 이 있을 때, 한 클래스가 다른 클래스보다 훨씬 드물게 발생하는데, 단순 무작위 샘플링은 이러한 드문 샘플을 훈련 또는 테스트 세트에 불균형적으로 할당할 수가 있습니다. 이를 피하기 위해 _stratified sampling(계층화된 샘플링)_ 을 사용할 수 있습니다. 계층화된 샘플링은 훈련/테스트 분할이 각 클래스 내에서 별도로 수행된 다음 각 클라스의 하위 샘플이 전체 훈련 및 테스트 세트로 결합됩니다. 회귀 문제의 경우 결과 데이터를 _사분위수_ 로 인위적으로 구간화(binning)한 다음 네 차례에 걸쳐 계층화 표본을 추출할 수 있습니다. 이는 훈련 세트와 테스트 세트 간에 결과 분포를 유사하게 유지하는 효과적인 방법입니다.
 
-```{r ames-sale-price, echo = FALSE, fig.cap = "The distribution of the sale price (in log units) for the Ames housing data. The vertical lines indicate the quartiles of the data."}
+```{r ames-sale-price, echo = FALSE, fig.cap = "Ames 주택 데이터의 판매 가격 분포(로그 단위). 수직선은 데이터의 사분위수를 나타냅니다."}
 sale_dens <- 
   density(ames$Sale_Price, n = 2^10) %>% 
   tidy() 
@@ -76,7 +76,7 @@ quart_plot <-
 quart_plot
 ```
 
-The distribution of the sale price outcome for the Ames housing data is shown in Figure \@ref(fig:ames-sale-price). As previously discussed, the sale price distribution is right-skewed, with proportionally more inexpensive houses than expensive houses on either side of the center of the distribution. The worry here is that the more expensive houses would not be represented in the training set well with simple splitting; this would increase the risk that our model would be ineffective at predicting the price for such properties.  The dotted vertical lines in Figure \@ref(fig:ames-sale-price) indicate the four quartiles for these data. A stratified random sample would conduct the 80/20 split within each of these data subsets and then pool the results together. In `r pkg(rsample)`, this is achieved using the `strata` argument: 
+Ames 주택 데이터에 대한 판매 가격 결과의 분포는 그림 \@ref(fig:ames-sale-price)에 나와 있습니다. 이전에 논의한 바와 같이 판매 가격 분포는 오른쪽으로 비스듬히 있으며(right-skewed), 분포의 양쪽에 고가 주택보다 저렴한 주택이 비례적으로 더 많이 분포되어 있습니다. 여기서 우려되는 점은 고가의 주택이 단순한 분할을 했을 때 훈련 세트에 잘 표현되지 않을 것이라는 것입니다.; 이것은 우리 모델이 그러한 부동산의 가격을 예측하는 데 비효율적일 수 있는 위험을 증가시킬 것입니다. 그림 \@ref(fig:ames-sale-price)의 수직 점선은 이러한 데이터의 4분위수를 나타냅니다. 계층화된 무작위 샘플은 이러한 각 데이터 하위 집합 내에서 80/20 분할을 수행한 다음 결과를 함께 취합합니다. `r pkg(rsample)`에서 `strata` 인수를 사용하여 이 작업을 수행합니다.
 
 ```{r ames-strata-split}
 set.seed(123)
@@ -87,65 +87,66 @@ ames_test  <-  testing(ames_split)
 dim(ames_train)
 ```
 
-Only a single column can be used for stratification. 
+계층화에는 단일 컬럼만 사용할 수 있습니다. 
 
 :::rmdnote
-There is very little downside to using stratified sampling. 
+계층화 샘플링을 사용하면 단점이 거의 없습니다. 
 :::
 
-Are there situations when random sampling is not the best choice? One case is when the data have a significant _time_ component, such as time series data. Here, it is more common to use the most recent data as the test set. The `r pkg(rsample)` package contains a function called `initial_time_split()` that is very similar to `initial_split()`. Instead of using random sampling, the `prop` argument denotes what proportion of the first part of the data should be used as the training set; the function assumes that the data have been pre-sorted in an appropriate order. 
+무작위 샘플링이 최선의 선택이 아닌 경우가 있을까요? 한 가지 경우는 데이터에 시계열 데이터와 같은 중요한 _time_ 구성 요소가 있는 경우입니다. 여기서는 가장 최근의 데이터를 테스트 세트로 사용하는 것이 더 일반적입니다. `r pkg(rsample)` 패키지에는 `initial_split()`과 매우 유사한 `initial_time_split()`이라는 함수가 포함되어 있습니다. 무작위 샘플링을 사용하는 대신 `prop` 인수는 데이터의 첫 번째 부분이 얼마의 비율로 훈련 세트로 사용되어야 하는지를 나타냅니다.; 함수는 데이터가 적절한 순서로 사전 정렬되었다고 가정합니다.
 
-## What proportion should be used? 
+## 얼마의 비율을 사용해야 할까요? 
 
-The proportion of data that should be allocated for splitting is highly dependent on the context of the problem at hand. Too little data in the training set hampers the model's ability to find appropriate parameter estimates. Conversely, too little data in the test set lowers the quality of the performance estimates. There are parts of the statistics community that eschew test sets in general because they believe all of the data should be used for parameter estimation. While there is merit to this argument, it is good modeling practice to have an unbiased set of observations as the final arbiter of model quality. A test set should be avoided only when the data are pathologically small.
+분할에 할당될 데이터의 비율은 직면한 문제의 상황에 따라 크게 달라집니다. 훈련 세트에 데이터가 너무 적으면 모형이 적절한 모수 추정치를 찾을 수 없습니다. 반대로 시험 세트에 데이터가 너무 적으면 성능 추정치의 품질이 저하됩니다. 통계 커뮤니티에는 일반적으로 모든 데이터가 모수 추정에 사용되어야 한다고 믿기 때문에 시험 세트를 사용하지 않는 경우가 있습니다. 이 주장에는 장점이 있지만 모델 품질의 최종 결정자로써 편향성 없는 관찰 세트를 갖는 것이 좋은 모델링 관행입니다. 데이터가 비정상적으로 작은 경우에만 시험 세트를 사용하지 않습니다.
 
-## What about a validation set? 
+## 검증 세트(validation set)는 어떤가요? 
 
-Previously, when describing the goals of data splitting, we singled out the test set as the data that should be used to conduct a proper evaluation of model performance on the final model(s). This begs the question of, "How can we tell what is best if we don't measure performance until the test set?" 
+이전에 데이터 분할의 목표를 설명할 때 최종 모델에 대한 모델 성능의 적절한 평가를 수행하는 데 사용해야 하는 데이터로 시험 세트를 선택했습니다. 이것은 '시험 세트로 성능을 측정하기 전까지 가장 좋은 모델이 어떤 모델인지 어떻게 알 수 있을까?'라는 질문을 던집니다.
 
-It is common to hear about _validation sets_ as an answer to this question, especially in the neural network and deep learning literature. The validation set was originally defined in the early days of neural networks when researchers realized that measuring performance by re-predicting the training set samples led to results that were overly optimistic (significantly, unrealistically so). This led to models that overfit, meaning that they performed very well on the training set but poorly on the test set^[This is discussed in much greater detail in Section \@ref(overfitting-bad).]. To combat this issue, a small validation set of data were held back and used to measure performance as the network was trained. Once the validation set error rate began to rise, the training would be halted. In other words, the validation set was a means to get a rough sense of how well the model performed prior to the test set. 
+특히 신경망 및 딥러닝 문헌에서 이 질문에 대한 답변으로 _검증 세트(validation sets)_ 을 이야기 합니다. 검증 세트는 원래 신경망 초기에 연구원들이 훈련 세트 샘플을 사용해서 재예측하여 성능을 측정하면 지나치게 낙관적인(매우, 비현실적으로) 결과를 가져온다는 것을 깨달았을 때 도입되었습니다. 이로 인해 모델이 과적합되어 훈련 세트에서는 매우 잘 수행되지만 테스트 세트에서는 예측 결과가 좋지 않습니다^[이것은 \@ref(overfitting-bad) 섹션에서 훨씬 더 자세히 논의됩니다.] 이 이슈를 해결하기 위해 네트워크가 훈련될 때 데이터의 작은 검증 세트를 따로 두어 성능을 측정하는 데 사용했습니다. 검증 세트 오류율이 상승하기 시작하면 훈련이 중단됩니다. 즉, 검증 세트는 시험 세트 이전에 모델이 얼마나 잘 수행되었는지 대략적으로 파악하는 수단이었습니다.
 
 :::rmdnote
-It is largely semantics as to whether validation sets are a subset of the training set or a third allocation in the initial split of the data.
+검증 세트가 훈련 세트의 하위 집합인지 아니면 데이터의 초기 분할에서 세 번째 할당인지에 큰 의미가 있습니다.
 :::
 
-Validation sets are discussed more in Section \@ref(validation) as a special case of _resampling_ methods that are used on the training set.
+검증 세트는 훈련 세트에서 사용되는 _resampling_ 메소드의 특별한 경우로 \@ref(validation) 섹션에서 더 자세히 논의됩니다.
 
 ## Multi-level data
 
-With the Ames housing data, a property is considered to be the _independent experimental unit_. It is safe to assume that, statistically, the data from a property are independent. For other applications, that is not always the case: 
+Ames 주택 데이터에서 속성은 _독립적인 실험 단위_ 로 간주됩니다. 통계적으로 속성의 데이터는 독립적이라고 가정해도 무방합니다. 다른 응용 프로그램의 경우 항상 그런 것은 아닙니다.:
 
- * For longitudinal data, the same independent experimental unit can be measured over multiple time points. An example would be a human subject in a medical trial. 
+ * 종방향 데이터의 경우 동일한 독립 실험 단위를 여러 시점으로 측정할 수 있습니다. 예를 들면 의학 실험에서 인간 실험 대상이 될 수 있습니다.
  
+ * 제조된 제품의 일괄처리도 독립적인 실험 단위로 간주될 수 있습니다. 반복 측정 설계에서는 일괄처리로부터 복제 데이터 포인트가 수집됩니다.
  * A batch of manufactured product might also be considered the independent experimental unit. In repeated measures designs, replicate data points from a batch are collected. 
  
- * @spicer2018 report an experiment where different trees were sampled across the top and bottom portions of a stem. Here, the tree is the experimental unit and the data hierarchy is sample within stem position within tree.  
+ * @spicer2018은 나무 줄기의 상단과 하단에 걸쳐 서로 다른 여러 나무들을 표본 추출한 실험 보고서입니다. 여기에서 나무는 실험 단위이고 데이터 계층은 나무의 줄기 위치의 표본입니다.
  
-Chapter 9 of @fes contains other examples. 
+9 of @fes 장은 다른 보기들이 있습니다. 
 
-In these situations, the data set will have multiple rows per experimental unit. Simple resampling across rows would lead to some data within an experimental unit being in the training set and others in the test set. Data splitting should occur at the independent experimental unit level of the data. For example, to produce an 80/20 split of the data, 80% of the experimental units should be allocated for the training set.  
+이러한 상황에서 데이터 세트에는 실험 단위당 여러 행이 있습니다. 행 전체에서 간단한 리샘플링은 실험 단위 내의 일부 데이터가 훈련 세트에 있고 다른 데이터가 시험 세트에 있게 됩니다. 데이터 분할은 데이터의 독립적인 실험 단위 수준에서 수행되어야 합니다. 예를 들어, 데이터의 80/20 분할을 생성하려면 실험 단위의 80%를 훈련 세트에 할당되어야 합니다.
 
 
-## Other considerations 
+## 다른 고려사항들 
 
-Throughout this book, notice which data are exposed to the model at any given time. Remember that it is critical to quarantine the test set from any model building activities. 
+이 책을 통해서 주어진 시간에 어떤 데이터가 모델에 노출되는지 확인하십시오. 모든 모델 구축 활동에서 시험 세트를 격리하는 것이 중요하다는 것을 기억하시기 바랍니다.
 
 :::rmdwarning
-The problem of _information leakage_ occurs when data outside of the training set are used in the modeling process. 
+_정보 유출_ 의 문제는 훈련 세트 외부의 데이터가 모델링 과정에서 사용될 때 발생합니다.
 :::
 
-For example, in a machine learning competition, the test set data might be provided without the true outcome values so that the model can be scored and ranked. One potential method for improving the score might be to fit the model using the training set points that are most similar to the test set values. While the test set isn't directly used to fit the model, it still has a heavy influence. In general, this technique is highly problematic since it reduces the _generalization error_ of the model to optimize performance on a specific data set. There are more subtle ways that the test set data can be utilized during training. Keeping the training data in a separate data frame from the test set is one small check to make sure that information leakage does not occur by accident. 
+예를 들어, 기계 학습에서 시험 세트 데이터는 결과값 없이 제공되어 모델의 점수를 매기고 순위를 매길 수 있습니다. 점수를 향상시키는 한 가지 잠재적인 방법은 시험 세트 값과 가장 유사한 훈련 세트 포인트를 사용하여 모델을 적합시키는 것입니다. 테스트 세트가 모델에 직접 사용되지는 않지만 여전히 큰 영향을 미칩니다. 일반적으로 이 기술은 특정 데이터 세트에 대한 성능을 최적화하기 위해 모델의 _일반화 오류_ 를 줄이기 때문에 매우 문제가 많습니다. 훈련 중에 시험 세트 데이터를 활용할 수 있는 더 미묘한 방법이 있습니다. 훈련 데이터를 시험 세트와 별도의 데이터 프레임에 보관하는 것은 정보 유출이 우발적으로 발생하지 않도록 하는 작은 기교 중 하나입니다.
 
-In later chapters we discuss techniques to subsample the training set to mitigate specific issues (e.g., class imbalances). This is a valid and common technique that deliberately results in the training set data diverging from the population from which the data were drawn. It is critical that the test set continue to mirror what the model would encounter _in the wild_. In other words, the test set should always resemble new data that will be given to the model. 
+이후 장에서는 특정 문제(예: 클래스 불균형)를 완화하기 위해 훈련 세트를 서브샘플링하는 기술에 대해 논의합니다. 이것은 의도적으로 데이터를 가져온 모집단과 다른 훈련 데이터 세트를 생성하는 유효하고 일반적인 기술입니다. 시험 세트는 모델이 _야생에서_ 직면하는 것을 계속 미러링하는 것이 중요합니다. 즉, 시험 세트는 항상 모델에 제공될 새 데이터와 유사해야 합니다.
  
-Finally, at the beginning of this chapter, we warned about using the same data for different tasks. Chapter \@ref(resampling) will discuss solid, data-driven methodologies for data usage that will reduce the risks related to bias, overfitting, and other issues. Many of these methods mirror the data-splitting tools shown in this chapter.  
+마지막으로 이 장의 시작 부분에서 서로 다른 작업에 동일한 데이터를 사용하는 것에 대해 경고했습니다. \@ref(resampling) 장에서는 편향, 과적합 및 기타 문제와 관련된 위험을 줄이는 데이터 사용에 대한 견고한 데이터 중심 방법론에 대해 논의합니다. 이러한 방법 중 많은 부분이 이 장에 나와 있는 데이터 분할 도구를 반영합니다.
 
 
-## Chapter summary {#splitting-summary}
+## 단원 요약 {#splitting-summary}
  
-Data splitting is the fundamental tool for empirical validation of models. Even in the era of unrestrained data collection, a typical modeling project has a limited amount of appropriate data and wise "spending" of a project's data is necessary. In this chapter, we discussed several strategies for partitioning the data into distinct groups for modeling and evaluation. 
+데이터 분할은 모델의 경험적 검증을 위한 기본 도구입니다. 데이터 수집이 무궁무진한 시대에도 전형적인 모델링 프로젝트는 적절한 데이터의 양이 제한되어 있으며 프로젝트 데이터의 현명한 '소비'가 필요합니다. 이 장에서는 모델링 및 평가를 위해 데이터를 개별 그룹으로 분할하는 몇 가지 전략에 대해 논의했습니다.
 
-At this checkpoint, the important code snippets are:
+이 체크포인트에서 중요한 코드 조각은 다음과 같습니다.:
 
 ```{r splitting-summary, eval = FALSE}
 library(tidymodels)
