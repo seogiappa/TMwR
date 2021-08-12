@@ -10,62 +10,62 @@ tidymodels_prefer()
 source("ames_snippets.R")
 ```
 
-# Fitting models with parsnip {#models}
+# 패키지로 모델 적합화 {#models}
 
-The `r pkg(parsnip)` package provides a fluent and standardized interface for a variety of different models. In this chapter, we both give some motivation for why a common interface is beneficial and show how to use the package. 
+`r pkg(parsnip)` 패키지는 다양한 모델에 대해 능숙하고 표준화된 인터페이스를 제공합니다. 이 장에서 우리는 공통 인터페이스가 왜 유익한지에 대한 동기를 부여하고 패키지를 사용하는 방법을 보여줍니다.
 
-In this chapter, we focus on how to `fit()` and `predict()` directly with a `r pkg(parsnip)` object. This may be a good fit for some straightforward modeling problems, but the next chapter illustrates a better approach to these tasks by combining models and preprocessors together into something called a `workflow` object. 
+이 장에서는 `r pkg(parsnip)` 객체로 직접 `fit()` 및 `predict()`를 수행하는 방법에 중점을 둡니다. 여기에서는 일부 간단한 모델링 문제에 적합시키는 것을 보여주고, 다음 장에서는 모델과 전처리기를 '워크플로'라고 하는 객체와 결합하여 더 나은 접근 방식을 보여줍니다.
 
  
-## Create a model
+## 모델 만들기
 
-Once the data have been encoded in a format ready for a modeling algorithm, such as a numeric matrix, they can be used in the model building process.  
+데이터가 숫자 행렬과 같은 모델링 알고리즘에 사용할 수 있는 형식으로 인코딩되면 모델 구축 프로세스에서 사용할 수 있습니다.
 
-Suppose that a linear regression model was our initial choice for the model. This is equivalent to specifying that the outcome data is numeric and that the predictors are related to the outcome in terms of simple slopes and intercepts: 
+우리가 선택한 초기 모델이 선형 회귀 모델이라고 가정해 봅시다. 이는 결과 데이터가 숫자이고 예측 변수가 단순 기울기 및 절편과 관련되어 있다는 것과 같습니다.:
 
 $$y_i = \beta_0 + \beta_1 x_{1i} + \ldots + \beta_p x_{pi}$$
 
-There are a variety of methods that can be used to estimate the model parameters: 
+모델의 매개변수를 추정하는 데 사용할 수 있는 다양한 방법이 있습니다.: 
 
- * _Ordinary linear regression_ uses the traditional method of least squares to solve for the model parameters. 
+ * _일반 선형 회귀_ 는 기존의 최소 제곱법을 사용하여 모델 매개변수를 해결합니다. 
 
- * _Regularized linear regression_ adds a penalty to the least squares method to encourage simplicity by removing predictors and/or shrinking their coefficients towards zero. This can be executed using Bayesian or non-Bayesian techniques. 
+ * _정규화된 선형 회귀_ 는 예측 변수를 제거하거나 계수를 0으로 축소하는 방식으로 단순화하고, 단순성을 높이기 위해 최소 제곱법에 페널티를 추가합니다. 이것은 베이지안 또는 비 베이지안 기술을 사용하여 실행할 수 있습니다.
 
-In R, the `r pkg(stats)` package can be used for the first case. The syntax for `lm()` is 
+R에서, 첫 번째 경우(_일반 선형 회귀_)는 `r pkg(stats)` 패키지 `lm()` 함수를 사용할 수 있으며, 구문은 다음과 같습니다.
 
 ```r
 model <- lm(formula, data, ...)
 ```
 
-where `...` symbolizes other options to pass to `lm()`. The function does _not_ have an `x`/`y` interface, where we might pass in our outcome as `y` and our predictors as `x`. 
+여기서 `...`는 `lm()`에 전달할 다른 옵션을 상징합니다. 이 함수에는 `x`/`y` 인터페이스가 _없습니다_. 여기서 결과는 `y`로, 예측자는 `x`로 전달할 수 있습니다.
 
-To estimate with regularization, a Bayesian model can be fit using the `r pkg(rstanarm)` package: 
+두번째의 _정규화된 선형 회귀_ 는 베이지안 모델 `r pkg(rstanarm)` 패키지를 사용하여 적합화 할 수 있습니다.
 
 ```r
 model <- stan_glm(formula, data, family = "gaussian", ...)
 ```
 
-In this case, the other options passed via `...` would include arguments for the _prior distributions_ of the parameters as well as specifics about the numerical aspects of the model. As with `lm()`, only the formula interface is available. 
+이 경우 `...`를 통해 전달되는 다른 옵션에는 매개변수의 _사전 분포_ 에 대한 인수와 모델의 수치적 측면에 대한 세부사항이 포함됩니다. `lm()`과 마찬가지로 수식 인터페이스만 사용할 수 있습니다.
 
-A popular non-Bayesian approach to regularized regression is the glmnet model [@glmnet]. Its syntax is:
+정규화 회귀에 대한 인기 있는 비 베이지안 접근 방식은 glmnet 모델 [@glmnet]입니다. 구문은 다음과 같습니다.
 
 ```r
 model <- glmnet(x = matrix, y = vector, family = "gaussian", ...)
 ```
 
-In this case, the predictor data must already be formatted into a numeric matrix; there is only an `x`/`y` method and no formula method. 
+이 경우 예측 변수 데이터는 이미 숫자형 행렬로 형식이 지정되어 있어야 합니다. `x`/`y` 메서드만 있고 수식 메서드는 없습니다.
 
-Note that these interfaces are heterogeneous in either how the data are passed to the model function or in terms of their arguments. The first issue is that, to fit models across different packages, the data must be formatted in different ways. `lm()` and `stan_glm()` only have formula interfaces while `glmnet()` does not. For other types of models, the interfaces may be even more disparate. For a person trying to do data analysis, these differences require the memorization of each package's syntax and can be very frustrating. 
+이 인터페이스들은 데이터가 모델 함수에 전달되는 방식이나 인수 측면에서 서로 다르다는 것을 주의하십시오. 모델 함수에 전달되는 방식 측면을 보면, 여러 패키지에 걸쳐 모델을 적합화 시키기 위해서는 데이터를 다른 방식으로 형식화해야 한다는 것을 말합니다. 두번째 인수 측면에서 보면, `lm()` 및 `stan_glm()`에는 수식 인터페이스만 있고 `glmnet()`에는 없습니다. 다른 유형의 모델의 경우 인터페이스가 훨씬 더 이질적일 수 있습니다. 데이터 분석을 수행하려는 입장에서 보면, 각 패키지의 구문을 기억해야 하는 등 이러한 차이가 매우 어려울 수 있습니다.
 
-For tidymodels, the approach to specifying a model is intended to be more unified: 
+그런데, tidymodels의 경우 모델을 지정하는 접근 방식이 아래와 같이 통합되어 있습니다.: 
 
-1. **Specify the _type_ of model based on its mathematical structure** (e.g., linear regression, random forest, _K_-nearest neighbors, etc). 
+1. **수학적 구조를 기반으로 모델의 _type_ 지정합니다.** (e.g., linear regression, random forest, _K_-nearest neighbors, etc). 
 
-2. **Specify the _engine_ for fitting the model.** Most often this reflects the software package that should be used. 
+2. **모델 피팅을 위해 _engine_ 을 지정합니다.** 대부분의 경우 _engine_ 사용해야 하는 소프트웨어 패키지입니다. 
 
-3. **When required, declare the _mode_ of the model.** The mode reflects the type of prediction outcome. For numeric outcomes, the mode is _regression_; for qualitative outcomes, it is _classification_^[Note that `r pkg(parsnip)` constrains the outcome column of a classification model to be encoded as a _factor_; using binary numeric values will result in an error.]. If a model can only create one type of model, such as linear regression, the mode is already set. 
+3. **필요한 경우 모델의 _mode_ 를 선언합니다.** _mode_ 는 예측 결과의 유형입니다. 숫자 결과의 경우 모드는 _regression_ 입니다.; 정성적 결과의 경우는 _classification_^[`r pkg(parsnip)`은 분류 모델의 결과 컬럼이 _factor_ 로 인코딩 됩니다.; 이진 숫자 값을 사용하면 오류가 발생합니다.]입니다. 모델이 선형 회귀와 같은 한 가지 유형의 모델만 생성할 수 있는 경우 모드가 이미 설정되어 있습니다.
 
-These specifications are built _without referencing the data_. For example, for the three cases above: 
+이 사양들은 _데이터를 참조하지 않고_ 만들어졌습니다. 예를 들어 위의 세 가지 경우:
 
 ```{r models-lin-reg-spec}
 library(tidymodels)
@@ -79,9 +79,9 @@ linear_reg() %>% set_engine("stan")
 ```
 
 
-Once the details of the model have been specified, the model estimation can be done with either the `fit()` function (to use a formula) or the `fit_xy()` function (when your data are already pre-processed). The `r pkg(parsnip)` package allows the user to be indifferent to the interface of the underlying model; you can always use a formula even if the modeling package's function only has the `x`/`y` interface. 
+모델의 세부 사항이 지정되면 `fit()` 함수(공식을 사용할 경우) 또는 `fit_xy()` 함수(데이터가 이미 사전 처리된 경우)를 사용하여 모델 추정을 수행할 수 있습니다. `r pkg(parsnip)` 패키지를 사용하면 사용자가 기본 모델의 인터페이스에 신경쓰지 않아도 됩니다. 모델링 패키지의 함수에 `x`/`y` 인터페이스만 있는 경우에도 항상 공식을 사용할 수 있습니다.
 
-The `translate()` function can provide details on how `r pkg(parsnip)` converts the user's code to the package's syntax: 
+`translate()` 함수는 `r pkg(parsnip)` 패키지가 사용자 코드를 패키지 구문으로 변환하는 방법에 대해 세부 정보를 제공합니다:
 
 ```{r models-lin-reg-trans}
 linear_reg() %>% set_engine("lm") %>% translate()
@@ -91,13 +91,13 @@ linear_reg(penalty = 1) %>% set_engine("glmnet") %>% translate()
 linear_reg() %>% set_engine("stan") %>% translate()
 ```
 
-Note that `missing_arg()` is just a placeholder for the data that has yet to be provided. 
+`missing_arg()`는 아직 제공되지 않은 데이터의 자리 표시자일 뿐입니다.
 
 :::rmdnote
-Note that we supplied a required `penalty` argument for the glmnet engine. Also, for the Stan and glmnet engines, the `family` argument was automatically added as a default. As will be shown below, this option can be changed.  
+glmnet 엔진에 필요한 `penalty` 인수를 제공한다는 점을 주의하십시오. 또한 Stan 및 glmnet 엔진의 경우 `family` 인수가 자동으로 기본값으로 추가되었습니다. 아래와 같이 이 옵션은 변경될 수 있습니다.
 :::
 
-Let's walk through how to predict the sale price of houses in the Ames data as a function of only longitude and latitude:
+Ames 데이터에서 경도와 위도의 함수로 주택 판매 가격을 예측하는 방법을 살펴보겠습니다.:
 
 
 ```{r models-ames-geocodes}
@@ -107,7 +107,7 @@ lm_model <-
 
 lm_form_fit <- 
   lm_model %>% 
-  # Recall that Sale_Price has been pre-logged
+  # Sale_Price가 미리 기록되어 있음을 기억하십시오.
   fit(Sale_Price ~ Longitude + Latitude, data = ames_train)
 
 lm_xy_fit <- 
@@ -122,14 +122,14 @@ lm_xy_fit
 ```
 
 :::rmdwarning
-The differences between `fit()` and `fit_xy()` may not be obvious. 
+`fit()`과 `fit_xy()`의 차이점이 명확하지 않을 수 있습니다.
 
-When `fit()` is used with a model specification, this _almost always_ means that dummy variables will be created from qualitative predictors. If the underlying function requires a matrix (like glmnet), it will make them. However, if the underlying function uses a formula, `fit()` just passes the formula to that function. We estimate that 99% of modeling functions using formulas make dummy variables. The other 1% include tree-based methods that do not require purely numeric predictors.^[See Section \@ref(workflow-encoding) for more about using formulas in tidymodels.]
+`fit()`이 모델 사양과 함께 사용되면 _거의 항상_ 정성적 예측 변수에서 더미 변수가 생성됩니다. 기본 함수에 행렬(예: glmnet)이 필요한 경우 행렬이 만들어집니다. 그러나 기본 함수가 공식을 사용하는 경우 `fit()`은 단지 해당 함수에 공식을 전달합니다. 공식을 사용하는 모델링 함수의 99%가 더미 변수를 만드는 것으로 추정됩니다. 나머지 1%에는 순수한 숫자 예측 변수가 필요하지 않은 트리 기반 메소드들입니다.^[tidymodels에서 공식을 사용하는 방법에 대한 자세한 내용은 \@ref(workflow-encoding) 섹션을 참조하세요.]
 
-The `fit_xy()` function always passes the data as-is to the underlying model function. It will not create dummy variables before doing so.
+`fit_xy()` 함수는 항상 데이터를 있는 그대로 기본 모델 함수에 전달합니다. 전달하기 전에 더미 변수를 생성하지 않습니다.
 :::
 
-Not only does `r pkg(parsnip)` enable a consistent model interface for different packages, it also provides consistency in the _model arguments_. It is common for different functions which fit the same model to have different argument names. Random forest model functions are a good example. Three commonly used arguments are the number of trees in the ensemble, the number of predictors to randomly sample with each split within a tree, and the number of data points required to make a split. For three different R packages implementing this algorithm, those arguments are:
+`r pkg(parsnip)` 패키지는 다른 패키지에 대해 일관된 모델 인터페이스를 가능하게 할 뿐만 아니라 _model 인수_ 에도 일관성을 제공합니다. 동일한 모델에 맞는 다른 함수가 다른 인수 이름을 갖는 것은 일반적입니다. 랜덤 포레스트 모델 함수가 좋은 예입니다. 일반적으로 사용되는 세 가지 인수는 앙상블의 트리 수, 트리 내 각 분할에서 무작위로 샘플링할 예측 변수 수, 분할을 수행하는 데 필요한 데이터 포인트 수입니다. 이 알고리즘을 구현하는 세 가지 다른 R 패키지의 경우 해당 인수는 다음과 같습니다:
 
 ```{r, models-rf-arg-names, echo = FALSE, results = "asis", eval = FALSE}
 arg_info <- 
@@ -188,7 +188,7 @@ arg_info %>%
 </tbody>
 </table>
 
-In an effort to make argument specification less painful, `r pkg(parsnip)` uses common argument names within and between packages. For random forests, `r pkg(parsnip)` models use: 
+인수 지정의 번거로움을 줄이기 위해 `r pkg(parsnip)` 패키지는 패키지 내부와 패키지 간에 공통 인수 이름을 사용합니다. 랜덤 포레스트의 경우 `r pkg(parsnip)` 모델은 다음을 사용합니다:
 
 ```{r, models-parsnip-names, echo = FALSE, results = "asis", eval = FALSE}
 arg_info %>%
@@ -221,13 +221,13 @@ arg_info %>%
 </tbody>
 </table>
 
-Admittedly, this is one more set of arguments to memorize. However, when other types of models have the same argument types, these names still apply. For example, boosted tree ensembles also create a large number of tree-based models, so `trees` is also used there, as is `min_n`, and so on. 
+이것은 기억해야 할 또 하나의 인수 세트입니다. 그러나 다른 유형의 모델에 동일한 인수 유형이 있는 경우에도 이 이름들이 계속 적용됩니다. 예를 들어, 부스트 트리 앙상블은 또한 많은 수의 트리 기반 모델을 생성하므로 '`tree`도 `min_n`과 마찬가지로 사용됩니다.
 
-Some of the original argument names can be fairly jargon-y. For example, to specify the amount of regularization to use in a glmnet model, the Greek letter `lambda` is used. While this mathematical notation is commonly used in the statistics literature, it is not obvious to many people what `lambda` represents (especially those who consume the model results). Since this is the penalty used in regularization, `r pkg(parsnip)` standardizes on the argument name `penalty`. Similarly, the number of neighbors in a _K_-nearest neighbors model is called `neighbors` instead of `k`. Our rule of thumb when standardizing argument names is:
+본래의 인수 이름 중 일부는 상당히 전문 용어일 수 있습니다. 예를 들어, glmnet 모델에서 사용할 정규화의 양을 지정하기 위해 그리스 문자 `lambda`가 사용됩니다. 이 수학적 표기법은 통계 문헌에서 일반적으로 사용되지만 `lambda`가 무엇을 나타내는지 많은 사람들(특히 모델 결과를 소비하는 사람들)에게 명확하지 않습니다. 이것은 정규화에 사용되는 penalry(벌칙)이므로 `r pkg(parsnip)` 패키지는 인수 이름 `penalty`를 표준으로 사용합니다. 마찬가지로 _K_-최근접 이웃(_K_-nearest neighbors; _K_-NN) 모델의 이웃 수를 `k` 대신 `neighbors`라고 합니다. 인수 이름을 표준화할 때의 규칙은 다음과 같습니다:
 
-> If a practitioner were to include these names in a plot or table, would the people viewing those results understand the name? 
+> 실무자가 플롯이나 테이블에 이러한 이름을 포함하면 해당 결과를 보는 사람들은 이 이름을 이해할 수 있을까요? 
 
-To understand how the `r pkg(parsnip)` argument names map to the original names, use the help file for the model (available via `?rand_forest`) as well as the `translate()` function: 
+`r pkg(parsnip)` 인수 이름이 원래 이름에 매핑되는 방식을 이해하려면 모델에 대한 도움말 파일(`?rand_forest`)과 `translate()` 함수를 사용하세요.
 
 ```{r models-glmnet-trans}
 rand_forest(trees = 1000, min_n = 5) %>% 
@@ -236,13 +236,13 @@ rand_forest(trees = 1000, min_n = 5) %>%
   translate()
 ```
 
-Modeling functions in `r pkg(parsnip)` separate model arguments into two categories: 
+`r pkg(parsnip)`의 모델링 함수는 모델 인수를 두 가지 범주로 분리합니다.: 
 
- * _Main arguments_ are more commonly used and tend to be available across engines. 
+ * _Main arguments_ 는 일반적으로 사용되며 여러 엔진에서 사용되는 경향이 있습니다. 
 
- * _Engine arguments_ are either specific to a particular engine or used more rarely. 
+ * _Engine arguments_ 는 특정 엔진에 고유하거나 드물게 사용됩니다. 
 
-For example, in the translation of the random forest code above, the arguments `num.threads`, `verbose`, and `seed` were added by default. These arguments are specific to the ranger implementation of random forest models and wouldn't make sense as main arguments. Engine-specific arguments can be specified in `set_engine()`. For example, to have the `ranger::ranger()` function print out more information about the fit:
+예를 들어 위의 랜덤 포레스트 코드의 번역에서, 인수 `num.threads`, `verbose`, `seed`가 기본으로 추가되었는데, 이 인수들은 랜덤 포레스트 모델의 레인저 구현(ranger: 랜덤 포레스트에서 고차원 데이터를 빠르게 구현할 수 있는 패키지-역자 주)에만 해당되며 _Main arguments_ 는 아닙니다.  _Engine arguments_ 는 `set_engine()`에서 지정할 수 있습니다. 예를 들어, `ranger::ranger()` 함수가 적합화에 대한 추가 정보를 출력하도록 하려면 아래와 같이 verbose = TRUE를 지정합니다:
 
 ```{r models-ranger-verb}
 rand_forest(trees = 1000, min_n = 5) %>% 
@@ -251,25 +251,25 @@ rand_forest(trees = 1000, min_n = 5) %>%
 ```
 
 
-## Use the model results
+## 모델 결과 사용
 
-Once the model is created and fit, we can use the results in a variety of ways; we might want to plot, print, or otherwise examine the model output. Several quantities are stored in a `r pkg(parsnip)` model object, including the fitted model. This can be found in an element called `fit`, which can be returned using the `purrr::pluck()` function:
+모델이 만들어지고 적합화되면 다양한 방법으로 결과를 이용할 수 있습니다. 모델 출력을 플로팅, 인쇄 또는 검사할 수 있습니다. 적합화된 모델을 포함하여 여러 정보들이 `r pkg(parsnip)` 모델 객체에 저장되고, `purrr::pluck()` 함수를 통해 반환되는 `fit`이라는 요소에서 찾을 수 있습니다.
 
 ```{r models-pluck}
 lm_form_fit %>% pluck("fit")
 ```
 
-Normal methods can be applied to this object, such as printing, plotting, and so on: 
+인쇄, 플로팅 등과 같은 일반적인 메소드들을 이 개체에 적용할 수 있습니다.
 
 ```{r models-pluck-coef}
-lm_form_fit %>% pluck("fit") %>% vcov()
+lm_form_fit %>% pluck("fit") %>% vcov() # stats::vcov() - Calculate Variance-Covariance Matrix for a Fitted Model Object-역자
 ```
 
 :::rmdwarning
-Never pass the `fit` element of a `r pkg(parsnip)` model to a model prediction function, e.g., use `predict(lm_form_fit)` but **do not** use `predict(lm_form_fit$fit)`. If the data were preprocessed in any way, incorrect predictions will be generated (sometimes, without errors). The underlying model's prediction function has no idea if any transformations have been made to the data prior to running the model. See Section \@ref(parsnip-predictions) for more on making predictions. 
+`r pkg(parsnip)` 모델의 `fit` 요소를 모델 예측 함수에 전달하지 마십시오. 예를 들어 `predict(lm_form_fit)`을 사용할 수 있지만, `predict(lm_form_fit$fit)`는 사용하지 **마세요**. 데이터가 어떤 식으로든 사전 처리된 경우 (때로는 오류 없이)잘못된 예측이 생성됩니다. 기본 모델의 예측 함수는 모델을 실행하기 전에 데이터가 변환되었는지 어떤지를 전혀 알지 못합니다. 예측에 대한 자세한 내용은 \@ref(parsnip-predictions) 섹션을 참조하세요.
 :::
 
-One issue with some existing methods in base R is that the results are stored in a manner that may not be the most useful. For example, the `summary()` method for `lm` objects can be used to print the results of the model fit, including a table with parameter values, their uncertainty estimates, and p-values. These particular results can also be saved:
+base R의 일부 메서드들이 가진 한 가지 문제는 결과가 가장 유용하게 사용될 수 있는 방식으로 저장되지 않는다는 것입니다. 예를 들어, `lm` 객체에 대한 `summary()` 메서드는 매개변수 값, 불확실성 추정치, p-value를 가진 테이블을 포함하여 모델 적합 결과를 인쇄하는 데 사용할 수 있습니다. 다음과 같은 특정 결과도 저장할 수 있습니다.
 
 ```{r models-lm-param}
 model_res <- 
@@ -283,54 +283,54 @@ class(param_est)
 param_est
 ```
 
-There are a few things to notice about this result. First, the object is a numeric matrix. This data structure was mostly likely chosen since all of the calculated results are numeric and a matrix object is stored more efficiently than a data frame. This choice was probably made in the late 1970's when computational efficiency was extremely critical. Second, the non-numeric data (the labels for the coefficients) are contained in the row names. Keeping the parameter labels as row names is very consistent with the conventions in the original S language. 
+이 결과에 대해 몇 가지 주의해야 할 사항이 있습니다. 첫째, 객체는 숫자 행렬입니다. 계산된 결과가 모두 숫자이고 행렬 객체가 데이터 프레임보다 더 효율적으로 저장되기 때문에 이 데이터 구조가 선택되었을 가능성이 높습니다. 이 선택은 아마도 계산 효율성이 매우 중요했던 1970년대 후반에 이루어졌을 것입니다. 둘째, 숫자가 아닌 데이터(계수의 레이블)가 행 이름에 포함됩니다. 매개 변수 레이블을 행 이름으로 유지하는 것은 원래 S 언어의 규칙과 매우 일치합니다.
 
-A reasonable next step might be to create a visualization of the parameters values. To do this, it would be sensible to convert the parameter matrix to a data frame. We could add the row names as a column so that they can be used in a plot. However, notice that several of the existing matrix column names would not be valid R column names for ordinary data frames (e.g. `"Pr(>|t|)"`).  Another complication is the consistency of the column names. For `lm` objects, the column for the test statistic is `"Pr(>|t|)"`, but for other models, a different test might be used and, as a result, the column name would be different (e.g., `"Pr(>|z|)"`) and the type of test would be _encoded in the column name_.  
+합리적인 다음 단계는 매개 변수 값의 시각화를 만드는 것일 수 있습니다. 이렇게 하려면 매개 변수 행렬을 데이터 프레임으로 변환하는 것이 좋습니다. 행 이름을 컬럼에 추가하여 플롯에 사용할 수 있습니다. 그러나 기존의 여러 행렬의 컬럼 이름은 일반 데이터 프레임에 대해 유효한 R의 컬럼 이름이 아닙니다(예: `'Pr( |t|)'`). 또 다른 문제는 컬럼 이름의 일관성입니다. `lm` 개체의 경우 테스트 통계에 대한 컬럼은 `'Pr( |t|)'`이지만 다른 모델의 경우 다른 테스트가 사용될 수 있으며 결과적으로 컬럼 이름이 다를 수 있습니다(예: `'Pr( |z|)'`) 및 테스트 유형은 _열 이름에 인코딩_ 됩니다.
  
-While these additional data formatting steps are not impossible to overcome, they are a hindrance, especially since they might be different for different types of models. The matrix is not a highly reusable data structure mostly because it constrains the data to be of a single type (e.g. numeric). Additionally, keeping some data in the dimension names is also problematic since those data must be extracted to be of general use.
+이러한 추가 데이터 형식 지정 단계는 극복이 불가능하지는 않지만, 특히 모델 유형에 따라 다를 수 있기 때문에 방해가 됩니다. 행렬은 대부분 데이터를 단일 유형(예: 숫자)으로 제한하기 때문에 재사용 가능성이 높은 데이터 구조가 아닙니다. 또한 차원 이름에 일부 데이터를 유지하는 것도 문제가 됩니다. 해당 데이터는 일반 용도로 추출해야 하기 때문입니다.
 
-As a solution, the `r pkg(broom)` package has methods to convert many types of model objects to a tidy structure. For example, using the `tidy()` method on the linear model produces:
+이에 대한 해결책으로 `r pkg(broom)` 패키지에는 여러 유형의 모델 객체를 깔끔한 구조로 변환하는 메소드가 있습니다. 예를 들어 선형 모델에서 `tidy()` 메소드를 사용하면 다음이 생성됩니다:
 
 
 ```{r models-tidy-lm}
 tidy(lm_form_fit)
 ```
  
-The column names are standardized across models and do not contain any additional data (such as the type of statistical test). The data previously contained in the row names are now in a column called `term` and so on. One important principle in the tidymodels ecosystem is that a function should return values that are _predictable, consistent, and unsurprising_. 
+컬럼 이름은 여러 모형에 걸쳐 표준화되며 추가 데이터(예: 통계 검정의 유형; t-tests,z-tests, anova tests 등을 말함)를 포함하지 않습니다. 이전에 행 이름에 포함된 데이터는 `term`이라는 컬럼에 있습니다. tidymodels 생태계에서 한 가지 중요한 원칙은 기능은 _예측 가능하고, 일관되며, 놀랍지 않은_ 값을 반환해야 한다는 것입니다.
 
 
-## Make predictions {#parsnip-predictions}
+## 예측하기 {#parsnip-predictions}
 
-Another area where `r pkg(parsnip)` diverges from conventional R modeling functions is the format of values returned from `predict()`. For predictions, `r pkg(parsnip)` always conforms to the following rules: 
+`r pkg(parsnip)` 패키지가 기존의 R 모델링 함수와 또 다른 영역은 `predict()`에서 반환되는 값의 형식입니다. 예측의 경우 `r pkg(parsnip)` 패키지는 항상 다음 규칙을 따릅니다:
 
- 1. The results are always a tibble.
- 2. The column names of the tibble are always predictable. 
- 3. There are always as many rows in the tibble as there are in the input data set. 
+ 1. 결과는 항상 tibble 구조입니다.
+ 2. tibble의 컬럼 이름은 항상 예측 가능합니다. 
+ 3. tibble에는 항상 입력 데이터 세트 수 만큼의 행이 있습니다.
 
-For example, when numeric data are predicted: 
+예를 들어 숫자 데이터가 예측되는 경우: 
 
 ```{r models-small-pred}
 ames_test_small <- ames_test %>% slice(1:5)
 predict(lm_form_fit, new_data = ames_test_small)
 ```
 
-The row order of the predictions are always the same as the original data. 
+예측의 행 순서는 항상 원래 데이터와 동일합니다. 
 
 :::rmdnote
-Why are there leading dot in some of the column names? Some tidyverse and tidymodels arguments and return values contain periods. This is to protect against merging data with duplicate names. There are some data sets that contain predictors named `pred`! 
+일부 컬럼 이름의 맨 앞에 점이 있는 이유는 무엇일까요? 일부 tidyverse 및 tidymodels 인수와 반환 값에는 마침표가 포함되어 있습니다. 이유는 중복된 이름을 가진 데이터가 병합되는 것을 방지하기 목적입니다. `pred`라는 예측 변수를 가진 일부 데이터 세트가 있다는 뜻입니다!
 :::
 
-These three rules make it easier to merge predictions with the original data: 
+아래 세 가지 규칙을 사용하면 예측을 원본 데이터와 더 쉽게 병합할 수 있습니다:
 
 ```{r models-small-int}
 ames_test_small %>% 
   select(Sale_Price) %>% 
   bind_cols(predict(lm_form_fit, ames_test_small)) %>% 
-  # Add 95% prediction intervals to the results:
+  # 결과에 95% 예측 구간 추가:
   bind_cols(predict(lm_form_fit, ames_test_small, type = "pred_int")) 
 ```
 
-The motivation for the first rule comes from some R packages producing dissimilar data types from prediction functions. For example, the `r pkg(ranger)` package is an excellent tool for computing random forest models. However, instead of returning a data frame or vector as output, a specialized object is returned that has multiple values embedded within it (including the predicted values). This is just one more step for the data analyst to work around in their scripts. As another example, the `r pkg(glmnet)` package can return at least four different output types for predictions, depending on the model and characteristics of the data: 
+첫 번째 규칙의 동기는 예측 함수에서 서로 다른 데이터 유형을 생성하는 일부 R 패키지에서 비롯됩니다. 예를 들어 `r pkg(ranger)` 패키지는 랜덤 포레스트 모델을 계산하기 위한 훌륭한 도구입니다. 그러나 데이터 프레임이나 벡터를 출력으로 반환하는 대신 여러 값(예측 값 포함)이 포함된 특수 개체가 반환됩니다. 이것은 데이터 분석가가 스크립트에서 해결해야 하는 또 하나의 단계일 뿐입니다. 또 다른 예로 `r pkg(glmnet)` 패키지는 데이터의 모델 및 특성에 따라 예측을 위해 최소 4가지 다른 출력 유형을 반환할 수 있습니다:
 
 | Type of Prediction       | Returns a:                      |
 |--------------------------|---------------------------------|
@@ -339,9 +339,9 @@ The motivation for the first rule comes from some R packages producing dissimila
 | probability (2 classes)  | numeric matrix (2nd level only) |
 | probability (3+ classes) | 3D numeric array (all levels)   |
 
-Additionally, the column names of the results contain coded values that map to a vector called `lambda` within the glmnet model object. This excellent statistical method can be discouraging to use in practice because of all of the special cases an analyst might encounter that require additional code to be useful.
+또한 결과의 컬럼 이름에는 glmnet 모델 개체 내에서 `lambda`라는 벡터에 매핑되는 코딩된 값이 포함됩니다. 이 뛰어난 통계 메소드는 분석가가 접할 수 있는 모든 특별한 경우에 유용하기 위해 추가 코드가 필요하기 때문에 실제로 사용하기가 어려울 수 있습니다.
 
-For the second tidymodels prediction rule, the predictable column names for different types of predictions are: 
+두 번째 tydymodels 예측 규칙의 경우, 다양한 유형의 예측에 대해 예측 가능한 컬럼 이름은 다음과 같습니다:
 
 ```{r model-pred-info, echo = FALSE, results = "asis"}
   tribble(
@@ -356,7 +356,8 @@ For the second tidymodels prediction rule, the predictable column names for diff
   kable_styling(full_width = FALSE)
 ```
 
-The third rule regarding the number of rows in the output is critical. For example, if any rows of the new data contain missing values, the output will be padded with missing results for those rows. 
+출력의 행 수에 관한 세 번째 규칙은 중요합니다. 예를 들어, 새 데이터의 어느 행에 결측값이 포함된 경우 출력은 해당 행에 대한 결측 결과로 채워집니다.
+`r pkg(parsnip)`에서 모델 인터페이스 및 예측 유형을 표준화하는 주요 이점은 다른 모델을 사용할 때 구문이 동일하다는 것입니다. 의사 결정 트리를 사용하여 Ames 데이터를 모델링했다고 가정합시다. 모델 사양 외에 코드 파이프라인에는 큰 차이가 없습니다.
 A main advantage of standardizing the model interface and prediction types in `r pkg(parsnip)` is that, when different models are used, the syntax is identical. Suppose that we used a decision tree to model the Ames data. Outside of the model specification, there are no significant differences in the code pipeline: 
 
 ```{r models-cart}
@@ -374,34 +375,34 @@ ames_test_small %>%
   bind_cols(predict(tree_fit, ames_test_small))
 ```
 
-This demonstrates the benefit of homogenizing the data analysis process and syntax across different models. It enables the user to spend their time on the results and interpretation rather than having to focus on the syntactical differences between R packages. 
+이는 다양한 모델에 걸쳐 데이터 분석 프로세스 및 구문을 균질화하는 이점을 보여줍니다. 이를 통해 사용자는 R 패키지 간의 구문의 차이에 크게 신경쓰지 않고 결과와 해석에 시간을 할애할 수 있습니다.
 
-## parsnip-adjacent packages
+## parsnip-인접 패키지들
 
-The `r pkg(parsnip)` package itself contains interfaces to a number of models. However, for ease of package installation and maintenance, there are other tidymodels packages that have `r pkg(parsnip)` model definitions for other sets of models. The `r pkg(discrim)` package has model definitions for the set of classification techniques called _discriminant analysis_ methods (such as linear or quadratic discriminant analysis). In this way, the package dependencies required for installing `r pkg(parsnip)` are reduced. A list of _all_ of the models that can be used with `r pkg(parsnip)` (across different packages that are on CRAN) can be found at [`tidymodels.org/find`](https://www.tidymodels.org/find/).  
+`r pkg(parsnip)` 패키지 자체에는 여러 모델에 대한 인터페이스가 포함되어 있습니다. 그러나 패키지 설치 및 유지 관리가 용이하도록 다른 모델 세트에 대한 `r pkg(parsnip)` 모델 정의가 있는 다른 tidymodels 패키지들이 있습니다. `r pkg(discrim)` 패키지에는 _판별 분석(discriminant analysis)_ 메소드(예: 선형 또는 2차 판별 분석)라는 분류 기술 세트에 대한 모델 정의가 있습니다. 이런 식으로 `r pkg(parsnip)` 설치에 필요한 패키지 종속성이 줄어듭니다. `r pkg(parsnip)`(CRAN에 있는 다양한 패키지에서) 패키지와 함께 사용할 수 있는 _모든_ 모델 목록은 [`tidymodels.org/find`](https://www.tidymodels.org/find/)에서 찾을 수 있습니다.
 
-## Creating model specifications {#parsnip-addin}
+## 모델 사양 만들기 {#parsnip-addin}
 
-It may become tedious to write many model specifications, or to remember how to write the code to generate them. The `r pkg(parsnip)` package includes an [RStudio addin](https://rstudio.github.io/rstudioaddins/) that can help. Either choosing this addin from the _Addins_ toolbar menu or running the code: 
+많은 모델 사양을 작성해야 하거나, 코드를 작성하여 모델 사양을 생성하는 방법을 기억하는 것은 지루할 수 있습니다. `r pkg(parsnip)` 패키지에는 도움이 될 수 있는 [RStudio addin](https://rstudio.github.io/rstudioaddins/)이 포함되어 있습니다. _addin_ 을 사용하기 위해서는 _Addins_ 도구 모음 메뉴에서 addin을 선택하거나 다음 코드를 실행합니다:
 
 ```{r models-add-in, eval = FALSE}
 parsnip_addin()
 ```
 
-will open a window in the Viewer panel of the RStudio IDE with a list of possible models for each model mode. These can be written to the source code panel: 
+RStudio IDE의 뷰어 패널에 각 모델 모드에 대한 가능한 모델 목록이 가진 창이 열립니다. 다음은 소스 코드 패널에 작성할 수 있습니다.
 
 ```{r models-add-in-gif, echo = FALSE, out.width = '100%'}
 knitr::include_graphics("premade/addin.gif")
 ```
 
-The model list includes models from `r pkg(parsnip)` and `r pkg(parsnip)`-adjacent packages that are on CRAN. 
+모델 목록에는 CRAN에 있는 `r pkg(parsnip)` 및 `r pkg(parsnip)`-인접 패키지의 모델들이 있습니다.
 
 
-## Chapter summary {#models-summary}
+## 단원 요약 {#models-summary}
 
-This chapter introduced the `r pkg(parsnip)` package, which provides a common interface for models across R packages using a standard syntax. The interface and resulting objects have a predictable structure. 
+이 장에서는 표준 구문을 사용하여 R 패키지 전체에서 모델에 대한 공통 인터페이스를 제공하는 `r pkg(parsnip)` 패키지를 소개했습니다. 인터페이스와 결과 개체는 예측 가능한 구조를 갖습니다.
 
-The code for modeling the Ames data that we will use moving forward is:
+앞으로 사용할 Ames 데이터를 모델링하기 위한 코드는 다음과 같습니다:
 
 ```{r models-summary, eval = FALSE}
 library(tidymodels)
