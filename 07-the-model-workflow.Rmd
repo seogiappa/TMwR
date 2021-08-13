@@ -7,63 +7,63 @@ tidymodels_prefer()
 source("ames_snippets.R")
 ```
 
-# A model workflow {#workflows}
+# 모델 워크플로 {#workflows}
 
-In the previous chapter, we discussed the `r pkg(parsnip)` package, which can be used to define and fit the model. This chapter introduces a new object called a _model workflow_. The purpose of this object is to encapsulate the major pieces of the modeling _process_ (previously discussed in Section \@ref(model-phases)). The workflow is important in two ways. First, using a workflow object encourages good methodology since it is a single point of entry to the estimation components of a data analysis. Second, it enables the user to better organize their projects. These two points are discussed in the following sections.  
+이전 장에서 우리는 모델을 정의하고 적합화하는데 사용할 수 있는 `r pkg(parsnip)` 패키지에 대해 논의했습니다. 이 장에서는 _model workflow_ 라는 새 개체를 소개합니다. 이 개체의 목적은 모델링 _process_ 의 주요 부분을 캡슐화하는 것입니다(이전에 \@ref(model-phases) 섹션에서 논의됨). 워크플로는 두 가지 면에서 중요합니다. 첫째, workflow 객체를 사용하면 데이터 분석의 추정 구성요소에 단일 진입점을 제공하므로 좋은 방법론을 사용할 수 있습니다. 둘째, 사용자가 프로젝트를 더 잘 구성할 수 있습니다. 이 두 가지 사항은 다음 섹션에서 설명합니다.
 
 
-## Where does the model begin and end? {#begin-model-end}
+## 모델의 시작과 끝은 어디인가요? {#begin-model-end}
 
-So far, when we have used the term "the model", we have meant a structural equation that relates some predictors to one or more outcomes. Let's consider again linear regression as an example. The outcome data are denoted as $y_i$, where there are $i = 1 \ldots n$ samples in the training set. Suppose that there are $p$ predictors $x_{i1}, \ldots, x_{ip}$ that are used in the model. Linear regression produces a model equation of 
+지금까지 '모델'이라는 용어를 사용했을 때 일부 예측 변수를 하나 이상의 결과와 관련시키는 구조 방정식을 의미했습니다. 다시 선형 회귀를 예로 들어 보겠습니다. 결과 데이터는 $y_i$로 표시되며, 여기서 $i = 1 \ldots n$ 샘플이 훈련 세트에 있습니다. 모델에 사용되는 $p$ 예측 변수 $x_{i1}, \ldots, x_{ip}$가 있다고 가정합시다. 선형 회귀는 다음과 같은 모델 방정식을 생성합니다.
 
 $$ \hat{y}_i = \hat{\beta}_0 + \hat{\beta}_1x_{i1} + \ldots + \hat{\beta}_px_{ip} $$
 
-While this is a _linear_ model, it is only linear in the parameters. The predictors could be nonlinear terms (such as the $log(x_i)$). 
+이것은 _선형_ 모델이지만 매개변수에서만 선형일 뿐입니다. 예측 변수는 비선형 항(예: $log(x_i)$)일 수 있습니다.
 
 :::rmdwarning
-The conventional way of thinking about the modeling process is that it only includes the model fit. 
+모델링 프로세스에 대한 기존의 사고 방식은 모델 적합만 포함한다는 것입니다.
 :::
 
-For some data sets that are straightforward in nature, fitting the model itself may be the entire process. However, there are a variety of choices and additional steps that often occur _before_ the model is fit:
+본질적으로 간단한 일부 데이터 세트의 경우 모델 자체를 적합화하는 것이 전체 프로세스일 수 있습니다. 그러나 모델이 적합화하기 _전에_ 자주 발생하는 다양한 선택과 추가 단계가 있습니다:
 
-* While our example model has $p$ predictors, it is common to start with more than $p$ candidate predictors. Through exploratory data analysis or using domain knowledge, some of the predictors may be excluded from the analysis. In other cases, a feature selection algorithm may be used to make a data-driven choice for the minimum predictor set for the model. 
-* There are times when the value of an important predictor is missing. Rather than eliminating this sample from the data set, the missing value could be _imputed_ using other values in the data. For example, if $x_1$ were missing but was correlated with predictors $x_2$ and $x_3$, an imputation method could estimate the missing $x_1$ observation from the values of $x_2$ and $x_3$. 
-* It may be beneficial to transform the scale of a predictor. If there is not _a priori_ information on what the new scale should be, we can estimate the proper scale using a statistical transformation technique, the existing data, and some optimization criterion. Other transformations, such as PCA, take groups of predictors and transform them into new features that are used as the predictors.
+* 예제 모형에는 $p$개의 예측 변수가 있지만 $p$개 이상의 후보 예측 변수로 시작하는 것이 일반적입니다. 탐색 데이터 분석 또는 도메인 지식을 사용하여 일부 예측 변수를 분석에서 제외할 수 있습니다. 다른 경우에는 특징 선택 알고리즘을 사용하여 모형에 대한 최소 예측 변수 집합에 대한 데이터 기반 선택을 할 수 있습니다.
+* 중요한 예측 변수의 값이 누락되는 경우가 있습니다. 데이터 세트에서 이 샘플을 제거하는 대신 데이터의 다른 값을 사용하여 누락된 값을 _대체_ 할 수 있습니다. 예를 들어 $x_1$가 누락되었지만 예측 변수 $x_2$ 및 $x_3$와 상관 관계가 있는 경우 대체 방법은 $x_2$ 및 $x_3$ 값에서 누락된 $x_1$ 관측치를 추정할 수 있습니다.
+* 예측변수의 척도를 변환하는 것이 유리할 수 있습니다. 새로운 척도가 무엇인지에 대한 _선험적_ 정보가 없는 경우 통계적 변환 기법과 기존 데이터 및 일부 최적화 기준을 사용하여 적절한 척도를 추정할 수 있습니다. PCA와 같은 다른 변환에서는 예측 변수 그룹을 사용하여 예측 변수로 사용되는 새로운 특징으로 변환합니다.
 
-While the examples above are related to steps that occur before the model fit, there may also be operations that occur _after_ the model is created. When a classification model is created where the outcome is binary (e.g., `event` and `non-event`), it is customary to use a 50% probability cutoff to create a discrete class prediction, also known as a "hard prediction". For example, a classification model might estimate that the probability of an event was 62%. Using the typical default, the hard prediction would be `event`. However, the model may need to be more focused on reducing false positive results (i.e., where true non-events are classified as events). One way to do this is to raise the cutoff from 50% to some greater value. This increases the level of evidence required to call a new sample an event. While this reduces the true positive rate (which is bad), it may have a more dramatic effect on reducing false positives. The choice of the cutoff value should be optimized using data. This is an example of a _post-processing_ step that has a significant effect on how well the model works, even though it is not contained in the model fitting step. 
+위의 예는 모델 적합 이전에 발생하는 단계와 관련이 있지만 모델이 생성된 _후에_ 발생하는 작업도 있을 수 있습니다. 결과가 이진수(예: `event` and `non-event`)인 분류 모델이 생성될 때 50% 확률 컷오프를 사용하여 이산형 클래스 예측을 생성하는 것이 관례이며, 이를 "하드 예측"이라고도 합니다. . 예를 들어, 분류 모델은 `event` 확률이 62%라고 추정할 수 있습니다. 일반적인 기본값을 사용하면 하드 예측은 `event`가 됩니다. 그러나 모델은 "거짓양성(false positive)"(즉, 실제 non-event가 event로 분류되는 경우) 결과를 줄이는 데 더 집중해야 할 수도 있습니다. 이를 수행하는 한 가지 방법은 컷오프를 50%에서 더 큰 값으로 높이는 것입니다. 이것은 새로운 표본을 event라고 부르는 데 필요한 증거 수준을 높입니다. 이렇게 하면 참양성률(true positive rate)(나쁨)이 줄어들지만 거짓양성률을 줄이는 데 더 극적인 효과가 있을 수 있습니다. 컷오프 값의 선택은 데이터를 사용하여 최적화되어야 합니다. 이것은 모델 피팅 단계에 포함되어 있지 않더라도 모델이 얼마나 잘 작동하는지에 상당한 영향을 미치는 _사후 처리_ 단계의 예입니다.
 
-It is important to focus on the broader _modeling process_, instead of only fitting the specific model used to estimate parameters. This broader process includes any preprocessing steps, the model fit itself, as well as potential post-processing activities. In this book, we will refer to this broader process as the **model workflow** and include in it any data-driven activities that are used to produce a final model equation. 
+매개변수를 추정하는 데 사용되는 특정 모델만 적합시키는 대신에, 더 광범위한 _모델링 프로세스_ 에 초점을 맞추는 것이 중요합니다. 이 광범위한 프로세스에는 모든 사전 처리 단계, 모델 자체 적합화 및 잠재적인 사후 처리 활동이 포함됩니다. 이 책에서는 이 광범위한 프로세스를 **모델 워크플로**라고 하며, 최종 모델 방정식을 생성하는 데 사용되는 모든 데이터 기반 활동이 여기에 포함됩니다.
 
 :::rmdnote
-In other software, such as Python or Spark, similar collections of steps are called  _pipelines_. In tidymodels, the term "pipeline" already connotes a sequence of operations chained together with a pipe operator (such as `%>%`). Rather than using ambiguous terminology in this context, we call the sequence of computational operations related to modeling **workflows**. 
+Python 또는 Spark와 같은 다른 소프트웨어에서는 이러한 유사한 단계 모음을 _pipelines_ 이라고 합니다. tidymodels에서 '파이프라인'이라는 용어는 이미 파이프 연산자(예: `%>%`)와 연결된 일련의 작업을 의미합니다. 이 컨텍스트에서 모호한 용어를 사용하는 대신 **워크플로** 모델링과 관련된 계산 작업의 시퀀스를 호출합니다.
 :::
 
-Binding together the analytical components of a data analysis is important for another reason. Future chapters will demonstrate how to accurately measure performance, as well as how to optimize structural parameters (i.e. model tuning). To correctly quantify model performance on the training set, Chapter \@ref(resampling) advocates using _resampling_ methods. To do this properly, no data-driven parts of the analysis should be excluded from validation. To this end, the workflow must include all significant estimation steps.
+데이터 분석의 분석 구성 요소들을 함께 묶는 것은 또 다른 이유로 중요합니다. 다음 장에서는 성능을 정확하게 측정하는 방법과 구조적 매개변수(예: 모델 튜닝)를 최적화하는 방법을 보여줍니다. 훈련 세트에서 모델 성능을 정확하게 수량화하기 위해 \@ref(resampling) 장에서는 _resampling_ 메소드를 사용하도록 권장합니다. 이렇게 하려면 분석에서 데이터 중심 부분을 검증에서 제외해서는 안 됩니다. 이를 위해 워크플로우에는 모든 중요한 추정 단계가 포함되어야 합니다.
 
-To illustrate, consider principal component analysis (PCA) signal extraction. We'll talk about this more in Section \@ref(example-steps) as well as Chapter \@ref(dimensionality); PCA is a way to replace correlated predictors with new artificial features that are uncorrelated and capture most of the information in the original set. The new features could be used as the predictors and least squares regression could be used to estimate the model parameters. 
+설명을 위해 PCA(주성분 분석;principal component analysis) 신호 추출을 고려합니다. 이에 대해서는 \@ref(example-steps)과 \@ref(dimensionality) 섹션에서 더 이야기하겠습니다; PCA는 상관 예측 변수를 상관 관계가 없는 새로 만든 특징으로 대체하고 원본 세트의 대부분의 정보를 캡처하는 방법입니다. 새로운 특징을 예측 변수로 사용할 수 있고 최소 제곱  회귀법을 사용하여 모델 매개변수를 추정할 수 있습니다.
 
-There are two ways of thinking about the model workflow. The _incorrect_ method would be to think of the PCA preprocessing step as _not being part of the modeling process_: 
+모델 워크플로우에 대해 생각하는 방법에는 두 가지가 있습니다. _incorrect_ 메서드는 PCA 전처리 단계를 _모델링 프로세스의 일부가 아닌 것_ 으로 생각하는 것입니다.
 
 ```{r workflow-bad, echo = FALSE, out.width = '80%', warning = FALSE}
 knitr::include_graphics("premade/bad-workflow.svg")
 ```
 
-The fallacy here is that, although PCA does significant computations to produce the components, its operations are assumed to have no uncertainty associated with them. The PCA components are treated as _known_ and, if not included in the model workflow, the effect of PCA could not be adequately measured. 
+여기서 오류는 PCA가 구성 요소를 생산하기 위해 상당한 계산을 수행하지만 PCA의 작동에는 구성 요소와 관련된 불확실성이 없다고 가정한다는 것입니다. PCA 구성요소는 _known_ 으로 처리되며 모델 워크플로우에 포함되지 않으면 PCA의 효과를 적절하게 측정할 수 없습니다.
 
-An _appropriate_ approach would be: 
+_적절한_ 접근 방식은 다음과 같습니다: 
 
 ```{r workflow-good, echo = FALSE, out.width = '80%', warning = FALSE}
 knitr::include_graphics("premade/proper-workflow.svg")
 ```
 
-In this way, the PCA preprocessing is considered part of the modeling process. 
+이러한 방식으로 PCA 전처리는 _모델링 프로세스의 일부_ 로 간주됩니다. 
 
-## Workflow basics
+## 워크플로 기본
 
-The `r pkg(workflows)` package allows the user to bind modeling and preprocessing objects together. Let's start again with the Ames data and a simple linear model:
+`r pkg(workflows)` 패키지를 사용하면 모델링과 전처리 개체를 함께 바인딩할 수 있습니다. Ames 데이터와 간단한 선형 모델로 다시 시작하겠습니다:
 
 ```{r workflows-simple}
-library(tidymodels)  # Includes the workflows package
+library(tidymodels)  # workflows 패키지 포함
 tidymodels_prefer()
 
 lm_model <- 
@@ -71,7 +71,7 @@ lm_model <-
   set_engine("lm")
 ```
 
-A workflow always requires a `r pkg(parsnip)` model object:
+워크플로에는 항상 `r pkg(parsnip)` 모델 객체가 필요합니다.:
 
 ```{r workflows-model-only}
 lm_wflow <- 
@@ -81,9 +81,9 @@ lm_wflow <-
 lm_wflow
 ```
 
-Notice that we have not yet specified how this workflow should preprocess the data: `Preprocessor: None`.
+이 워크플로가 데이터를 사전 처리하는 방법을 아직 지정하지 않았습니다: `전처리기: 없음`.
 
-If our model were very simple, a standard R formula can be used as a preprocessor: 
+우리 모델이 매우 단순하다면 표준 R 공식을 전처리기로 사용할 수 있습니다: 
 
 ```{r workflows-form}
 lm_wflow <- 
@@ -93,33 +93,34 @@ lm_wflow <-
 lm_wflow
 ```
 
-Workflows have a `fit()` method that can be used to create the model. Using the objects created in Section \@ref(models-summary):
+워크플로에는 모델을 만드는 데 사용할 수 있는 `fit()` 메서드가 있습니다. 섹션 \@ref(models-summary)에서 생성된 객체 사용:
 
 ```{r workflows-form-fit}
 lm_fit <- fit(lm_wflow, ames_train)
 lm_fit
 ```
 
-We can also `predict()` on the fitted workflow:
+피팅된 워크플로에서 `predict()`할 수도 있습니다:
 
 ```{r workflows-form-pred}
 predict(lm_fit, ames_test %>% slice(1:3))
 ```
 
-The `predict()` method follows all of the same rules and naming conventions that we described for the `r pkg(parsnip)` package in Section \@ref(parsnip-predictions). 
 
-Both the model and preprocessor can be removed or updated:
+`predict()` 메소드는 \@ref(parsnip-predictions) 섹션에서 `r pkg(parsnip)` 패키지에 대해 설명한 것과 동일한 규칙과 명명 규칙을 모두 따릅니다.
+
+모델과 전처리기를 모두 제거하거나 업데이트할 수 있습니다:
 
 ```{r workflows-form-update}
 lm_fit %>% update_formula(Sale_Price ~ Longitude)
 ```
 
-Note that, in this new object, the output shows that the previous _fitted_ model was removed since the new formula is inconsistent with the previous model fit. 
+이 새 개체에서, 출력은 새 공식이 이전의 모델 적합과 일치하지 않기 때문에 이전 _fitted_ 모델이 제거되었음을 보여줍니다.
 
 
-## Adding raw variables to the workflow
+## 워크플로에 원시 변수 추가
 
-There is another interface for passing data to the model, the `add_variables()` function which uses a `r pkg(dplyr)`-like syntax for choosing variables. The function has two primary arguments: `outcomes` and `predictors`. These use a selection approach similar to the `r pkg(tidyselect)` back-end of `r pkg(tidyverse)` packages to capture multiple selectors using `c()`. 
+데이터를 모델에 전달하는 또 다른 인터페이스인 `add_variables()` 함수는 변수 선택에 `r pkg(tidyverse)` 패키지와 유사한 구문을 사용합니다. 이 함수에는 `outcomes` 과 `predictors`라는 두 가지 기본 인수가 있습니다. 이들은 `c()`를 사용하여 다중 선택기를 캡처하기 위해 `r pkg(tidyverse)` 패키지의 `r pkg(tidyselect)` 백엔드와 유사한 선택 접근 방식을 사용합니다.
 
 ```{r workflows-add-variables}
 lm_wflow <- 
@@ -129,60 +130,62 @@ lm_wflow <-
 lm_wflow
 ```
 
-The predictors could also have been specified using a more general selector, such as 
+예측 변수는 다음과 같은 보다 일반적인 선택자를 사용하여 지정할 수도 있습니다.
 
 ```{r workflows-selector, eval = FALSE}
 predictors = c(ends_with("tude"))
 ```
 
+한 가지 장점은 예측 변수 인수에 실수로 지정된 모든 결과 컬럼이 조용히 제거된다는 것입니다. 이를 통해 다음을 쉽게 사용할 수 있습니다.:
 One nicety is that any outcome columns accidentally specified in the predictors argument will be quietly removed. This facilitates the use of:
 
 ```{r workflows-selector-all, eval = FALSE}
 predictors = everything()
 ```
 
-When the model is fit, the specification assembles these data, unaltered, into a data frame and passes it to the underlying function:
+모델이 적합되면 사양은 이러한 변경되지 않은 데이터를 데이터 프레임으로 조합하고 기본 함수에 전달합니다:
 
 ```{r workflows-add-variables-fit}
 fit(lm_wflow, ames_train)
 ```
 
-If you would like the underlying modeling method to do what it would normally do with the data, `add_variables()` can be a helpful interface. As we will discuss in Section \@ref(special-model-formulas), it also facilitates more complex modeling specifications. However, as we mention in the next section, models such as `glmnet` and `xgboost` expect the user to make indicator variables from factor predictors. In these cases, a recipe or formula interface will typically be a better choice. 
+일반적으로 데이터로 수행하는 작업을 기본 모델링 메소드가 수행하도록 하려면 `add_variables()`가 유용한 인터페이스가 될 수 있습니다. \@ref(special-model-formulas) 섹션에서 논의하겠지만, 보다 복잡한 모델링 사양을 지원합니다. 그러나 다음 섹션에서 언급했듯이 `glmnet` 및 `xgboost`와 같은 모델은 사용자가 요인 예측 변수에서 지표 변수를 만들 것으로 기대합니다. 이러한 경우에는 일반적으로 recipe 또는 공식(formula) 인터페이스가 더 나은 선택입니다.
 
-As seen in the next chapter, a more powerful preprocessor (called a _recipe_) can also be added to a workflow. 
+다음 장에서 볼 수 있듯이 더 강력한 전처리기(_recipe_ 라고 함)를 워크플로에 추가할 수도 있습니다.
 
-## How does a workflow use the formula? {#workflow-encoding}
+## 워크플로에서 공식을 어떻게 사용할까요? {#workflow-encoding}
 
-Recall from Section \@ref(formula) that the formula method in R has multiple purposes (we will discuss this further in Chapter \@ref(recipes)). One of these is to properly encode the original data into an analysis ready format. This can involve executing in-line transformations (e.g., `log(x)`), creating dummy variable columns, creating interactions or other column expansions, and so on. However, there are many statistical methods that require different types of encodings: 
+\@ref(formula)섹션에서 R의 수식 메소드는 다양한 목적을 가지고 있다는 것을 상기하십시오(\@ref(recipes)장에서 자세히 설명함). 그 중 하나는 원본 데이터를 분석 준비 형식으로 적절하게 인코딩하는 것입니다. 여기에는 인라인 변환 실행(예: `log(x)`), 더미 변수 컬럼 만들기, 상호 작용 또는 기타 컬럼 확장 만들기 등이 포함될 수 있습니다. 그러나 다양한 유형의 인코딩을 필요로 하는 많은 통계 메소드들이 있습니다:
+여기에는 인라인 변환(예: `log(x)`) 실행, 더미 변수 열 생성, 상호 작용 또는 기타 열 확장 생성 등이 포함될 수 있습니다. 그러나 다양한 유형의 인코딩이 필요한 많은 통계 방법이 있습니다.
 
- * Most packages for tree-based models use the formula interface but **do not** encode the categorical predictors as dummy variables. 
+ * 트리 기반 모델을 위한 대부분의 패키지는 수식 인터페이스를 사용하지만 범주형 예측 변수를 더미 변수로 인코딩**하지 않습니다**.
  
- * Packages can use special in-line functions that tell the model function how to treat the predictor in the analysis. For example, in survival analysis models, a formula term such as `strata(site)` would indicate that the column `site` is a stratification variable. This means that it should not be treated as a regular predictor and does not have a corresponding location parameter estimate in the model. 
+ * 패키지는 분석에서 특수 인라인 함수를 사용를 사용하여 예측변수를 처리하는 방법을 모델 함수에 알려줄 수 있습니다. 예를 들어, 생존 분석 모델에서 `strata(site)`와 같은 수식 항이 `site` 컬럼이 계층화 변수임을 나타냅니다. 이는 정규 예측 변수로 취급되어서는 안 되며 모델에 해당 위치 매개변수 추정값이 없음을 의미합니다.
 
- * A few R packages have extended the formula in ways that base R functions cannot parse or execute. In multilevel models (e.g. mixed models or hierarchical Bayesian models), a model term such as `(week | subject)` indicates that the column `week` is a random effect that has different slope parameter estimates for each value of the `subject` column. 
+ * 몇 가지 R 패키지는 base R 함수가 구문 분석하거나 실행할 수 없는 방식으로 수식을 확장했습니다. 다중수준 모델(예: 혼합 모델 또는 계층적 베이지안 모델)에서 `(week | subject)`와 같은 모델 용어는 `week` 컬럼이 `subject` 컬럼의 각 값에 대해 서로 다른 기울기 매개변수 추정값을 갖는 무작위 효과임을 나타냅니다.
 
-A workflow is a general purpose interface. When `add_formula()` is used, how should the workflow pre-process the data? Since the preprocessing is model dependent, workflows attempts to emulate what the underlying model would do _whenever possible_. If it is not possible, the formula processing should not do anything to the columns used in the formula. Let's look at this in more detail.
+워크플로(workflow)는 범용 인터페이스입니다. `add_formula()`를 사용할 때 워크플로에서 데이터를 어떻게 전처리해야 할까요? 사전 처리는 모델에 따라 다르므로 워크플로는 기본 모델이 _가능할 때마다_ 수행할 작업을 에뮬레이트하려고 시도합니다. 가능하지 않은 경우에 수식 처리는 수식에 사용된 컬럼에 아무 작업도 수행하지 않아야 합니다. 이에 대해 더 자세히 살펴보겠습니다.
 
-### Tree-based models {-}
+### 트리-기반 모델 {-}
 
-When we fit a tree to the data, the `r pkg(parsnip)` package understands what the modeling function would do. For example, if a random forest model is fit using the `r pkg(ranger)` or `r pkg(randomForest)` packages, the workflow knows predictors columns that are factors should be left as-is. 
+데이터에 트리를 적합시키면, `r pkg(parsnip)` 패키지는 모델링 함수가 무엇을 하는지 이해합니다. 예를 들어 랜덤포레스트 모델이 `r pkg(ranger)` 또는 `r pkg(randomForest)` 패키지를 사용하여 적합시키면 워크플로는 요인인 예측자 컬럼을 그대로 두어야 한다는 것을 알고 있습니다.
 
-As a counter example, a boosted tree created with the `r pkg(xgboost)` package requires the user to create dummy variables from factor predictors (since `xgboost::xgb.train()` will not). This requirement is embedded into the model specification object and a workflow using `r pkg(xgboost)` _will_ create the indicator columns for this engine. Also note that a different engine for boosted trees, C5.0, does not require dummy variables so none are made by the workflow. 
+반대의 예로써, `r pkg(xgboost)` 패키지로 생성된 부스트 트리는 사용자가 요인 예측자에서 더미 변수를 생성하도록 요구합니다(`xgboost::xgb.train()`은 더미 변수를 생성하지 않기 때문에). 이 요구 사항은 모델 사양 개체에 포함되며, `r pkg(xgboost)`를 사용하는 워크플로우가 이 엔진에 대한 표시기 컬럼을 만듭니다. 또한 부스트 트리용 다른 엔진인 C5.0은 더미 변수가 필요하지 않으므로 워크플로에 의해 아무것도 생성되지 않습니다.
 
-This determination is made for _each model and engine combination_. 
+이 결정은 _각 모델 및 엔진 조합_ 에 대해 이루어집니다.
 
-### Special formulas and in-line functions {#special-model-formulas}
+### 특수 공식 및 인라인 함수 {#special-model-formulas}
 
-A number of multilevel models have standardized on a formula specification devised in the `r pkg(lme4)` package. For example, to fit a regression model that has random effects for subjects, we would use the following formula: 
+많은 다중수준 모델이 `r pkg(lme4)` 패키지에서 고안된 수식 사양에 따라 표준화되었습니다. 예를 들어, 대상(subject)에 대한 무작위 효과가 있는 회귀 모델을 적합시키려면 다음 수식을 사용합니다:
 
 ```r
 library(lme4)
 lmer(distance ~ Sex + (age | Subject), data = Orthodont)
 ```
 
-The effect of this is that each subject will have an estimated intercept and slope parameter for `age`. 
+이것의 효과는 각 대상(subject)이 `age`에 대해 추정된 절편 및 기울기 매개변수를 갖게 된다는 것입니다.
 
-The problem is that standard R methods can't properly process this formula: 
+문제는 표준 R 방법이 이 수식을 제대로 처리할 수 없다는 것입니다.: 
 
 ```{r echo=FALSE}
 data(Orthodont, package = "nlme")
@@ -192,15 +195,15 @@ data(Orthodont, package = "nlme")
 model.matrix(distance ~ Sex + (age | Subject), data = Orthodont)
 ```
 
-The result is a zero row data frame. 
+결과는 0행을 가진 데이터 프레임입니다. 
 
 :::rmdwarning
-The issue is that the special formula has to be processed by the underlying package code, not the standard `model.matrix()` approach. 
+문제는 특별한 수식이 표준 `model.matrix()` 접근 방식이 아니라 기본 패키지 코드에 의해 처리되어야 한다는 것입니다.
 :::
 
-Even if this formula could be used with `model.matrix()`, this would still present a problem since the formula also specifies the statistical attributes of the model. 
+이 수식을 `model.matrix()`와 함께 사용할 수 있다 하더라도 수식에 모델의 통계적 속성도 지정되어 있기 때문에 여전히 문제가 발생합니다.
 
-The solution in `workflows` is an optional supplementary model formula that can be passed to `add_model()`. For example, using the previously mentioned `strata()` function in the `r pkg(survival)` package, the `add_variables()` specification provides the bare column names and then the actual formula given to the model is set within `add_model()`:  
+`workflows`의 솔루션은 `add_model()`에 전달할 수 있는 선택적 보조 모델 수식입니다. 예를 들어, `add_variables()` 사양은, 앞서 언급한 `r pkg(survival)` 패키지에 있는 `strata()` 함수를 사용해서, 날것의 컬럼 이름을 제공하고, 모델에 주어진 실제 수식은 `add_model ()` 내에서 설정됩니다:
 
 ```{r workflows-strata}
 library(survival)
@@ -211,7 +214,7 @@ parametric_model <-
 
 parametric_workflow <- 
   workflow() %>% 
-  # Pass the data along as-is: 
+  # 데이터를 있는 그대로 전달: 
   add_variables(outcome = c(fustat, futime), predictors = c(age, rx)) %>% 
   add_model(parametric_model, 
             # This formula is given to the model
@@ -221,14 +224,15 @@ parametric_fit <- fit(parametric_workflow, data = ovarian)
 parametric_fit
 ```
 
-Notice how, in the call printed above, the model-specific formula was used. 
+위에 인쇄된 호출에서 모델별 수식이 어떻게 사용되었는지 주목하십시오. 
 
-## Creating multiple workflows at once {#workflow-sets-intro}
+## 한 번에 여러 워크플로 만들기 {#workflow-sets-intro}
 
-There are some situations where the data require numerous attempts to find an appropriate model. For example: 
+데이터에서 적절한 모델을 찾기 위해 여러 번 시도해야 하는 상황이 있을 수 있습니다. 예를 들어: 
 
-* For predictive models, it is advisable to evaluate  a variety of different model types. This requires the user to create multiple model specifications. 
+* 예측 모델의 경우 다양한 모델 유형을 평가하는 것이 권장됩니다. 이를 위해서는 사용자가 여러 모델 사양을 생성해야 합니다.
 
+* 모델의 순차 테스트는 일반적으로 확장된 예측자 세트로 시작합니다. 이 '전체 모델'은 각 예측자를 차례로 제거하는 동일한 모델의 시퀀스와 비교됩니다. 기본적인 가설 검정 메소드 또는 경험적 검증을 사용하여 각 예측자의 효과를 분리하고 평가할 수 있습니다.
 * Sequential testing of models typically starts with an expanded set of predictors. This "full model" is compared to a sequence of the same model that removes each predictor in turn. Using basic hypothesis testing methods or empirical validation, the effect of each predictor can be isolated and assessed. 
 
 In these situations, as well as others, it can become tedious or onerous to create a lot of workflows from different sets of preprocessors and/or model specifications. To address this problem, the `r pkg(workflowset)` package creates combinations of workflow components. A list of preprocessors (e.g., formulas, `r pkg(dplyr)` selectors, or feature engineering recipe objects discussed in the next chapter) can be combined with a list of model specifications, resulting in a set of workflows. 
